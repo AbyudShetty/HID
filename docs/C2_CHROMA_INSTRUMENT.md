@@ -8,20 +8,25 @@
 - `backend/app/pipeline/chroma_instrument.py`: hash-verified SCRFD, one in-flight analysis (busy → 429), model missing → 503. MiniFASNet and ArcFace *serving* are NOT implemented.
 - Routes (operator token): `POST /api/v1/collect/preview` (one JPEG, transient), `POST /api/v1/collect/measure` (exact issued challenge, single use, **not stored**), `POST /api/v1/collect/bundles?analyze=true` (labelled, stored).
 - `/ops/spike` live panel (`LivePreview.tsx`): ~3 Hz, one request in flight, paused during capture; draws the exact processed frame with the backend's SCRFD box, landmarks and region outlines, real per-region linear-RGB means, server vs round-trip timing, and backend errors.
+- Post-capture `ReportViewer`: status/reasons/warnings, three SVG plots (actual emitted trace, face_core response, background response; gaps stay gaps, dashed lines are actual transitions), a frame slider showing the captured crop with that frame's backend region overlay, defined measurements, backend timing, raw JSON. Only the latest capture's crops are held in memory.
+- Admission: `/measure` (and `/bundles?analyze=true`) check instrument busy/model-loadable **before** consuming the one-time challenge, so 429/503 do not burn a capture (best effort: a concurrent request could still take the slot).
 - `/ops/spike`: new **"Measure only — no storage"** button (no label needed) showing the raw report. Labelled "Record session" is unchanged.
 
 ## Verified
-- Backend: 166 passed (incl. model + integration; new `test_measure_api.py` covers auth, forged-challenge rejection, 503 without model, single use, non-persistence; synthetic challenges now seeded). Frontend: 47 passed (+2 env-gated live). `tsc` clean.
+- Backend: 176 passed (incl. model + integration; new `test_measure_api.py` covers auth, forged-challenge rejection, 503 without model, single use, non-persistence; synthetic challenges now seeded). Frontend: 51 passed (+2 env-gated live; includes `plotModel.test.ts`). `tsc` clean.
 - Real browser (fake camera): live preview returned the backend face detection (score 0.88, cold server 127 ms incl. 103 ms SCRFD; one sample, not a benchmark).
 - Headless Chrome + fake camera (`tools/cdp_spike_e2e.mjs --measure`): capture → `/measure` → report returned. The fake camera is a static photo, so the report is correctly `unavailable` (no temporal variation). This tests plumbing only — **not liveness evidence**.
+
+- Real browser (fake camera), measure flow: viewer rendered 3 plot panels and a 256x256 crop with 1,643 backend-overlay pixels, no console errors, nothing stored on disk (static photo, so status `unavailable`).
+- Docker (isolated container, port 8100, separate image): `/health` ok with models verified; `/collect/preview` returned a face (score 0.87, 192 ms cold) and the same call without a token returned 401. Test container/image removed; `hid-backend-1` untouched.
 
 ## Measured compute (this laptop; docs/EXPERIMENTS.md E4-1)
 Warm 320 px per-crop ≈ 31 ms p50 / 42 ms p95 — **over** the plan's ≤ 20 ms budget; 640 px preview ≈ 121 ms p50; feature extraction ≈ 4 ms. `/measure` analyses after capture, so it is an engineering instrument, not a 2 s decision path.
 
 ## Not done (next)
-- Post-capture selectable-crop viewer and response plots (the raw report is shown as JSON).
-- Benchmark on the target AWS instance and with `det_500m`; Docker validation; physical webcam verification by the owner.
-- Known deviations: pixelwise specularity/uniformity features deferred (need defensible registration); `/measure` consumes the nonce before processing, so a busy/error response needs a new capture.
+- Visual review of the viewer by a human on a real webcam capture (only checked structurally in a browser).
+- Benchmark on the target AWS instance and with `det_500m`; physical webcam verification by the owner.
+- Known deviations: pixelwise specularity/uniformity features deferred (need defensible registration) .
 - Camera exposure/WB: unchanged browser settings do not prove physical locking.
 
 ## Manual webcam check

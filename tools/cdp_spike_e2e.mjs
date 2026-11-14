@@ -147,7 +147,15 @@ for (let i = 0; i < N; i++) {
   results.push({ palette, msg, row });
   await sleep(300);
 }
-const report = MEASURE ? await evaluate(`document.querySelector('[data-testid=report] pre')?.textContent ?? null`) : null;
+const report = MEASURE ? await evaluate(`(() => {
+  const root = document.querySelector('[data-testid=report]'); if (!root) return null;
+  const c = document.querySelector('[data-testid=crop-viewer] canvas');
+  let nonBlank = 0, overlay = 0;
+  if (c && c.width) { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    for (let i = 0; i < d.length; i += 4) { if (d[i] + d[i+1] + d[i+2] > 30) nonBlank++; if (d[i+1] > 150 && d[i] < 90 && d[i+2] < 120) overlay++; } }
+  return JSON.stringify({ status: document.querySelector('[data-testid=report-status]').textContent,
+    plotPanels: root.querySelectorAll('svg[role=img]').length, plotPaths: root.querySelectorAll('svg path').length,
+    cropCanvas: c ? [c.width, c.height] : null, nonBlankPixels: nonBlank, greenOverlayPixels: overlay }); })()`) : null;
 const failed = results.filter((r) => STALL_MS > 0 ? !r.msg.includes("invalid measurement: CAPTURE_OVERRUN") : !/^(uploaded|measured)/.test(r.msg)).length;
 console.log(JSON.stringify({ previewSummary, report: report ? JSON.parse(report) : null, ok: failed === 0, mode: STALL_MS > 0 ? "synthetic-stall-rejection" : "simulated-camera-capture", detector, camStatus, n: N, failed, results, consoleMsgs }, null, 1));
 ws.close();

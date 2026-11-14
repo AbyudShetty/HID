@@ -44,7 +44,7 @@ async def get_challenge(request: Request, palette_id: Literal["P1", "P2"] | None
     return body
 
 
-async def read_bundle(request: Request, *, require_label: bool):
+async def read_bundle(request: Request, *, require_label: bool, admit: bool = False):
     if request.headers.get("content-type", "").split(";")[0].strip() != BUNDLE_CONTENT_TYPE:
         raise HTTPException(status_code=415, detail=f"Content-Type must be {BUNDLE_CONTENT_TYPE}")
     declared = request.headers.get("content-length")
@@ -68,6 +68,16 @@ async def read_bundle(request: Request, *, require_label: bool):
         raise HTTPException(status_code=400, detail="invalid bundle: collect bundles require label.json")
     if bundle.meta.purpose != "collect":
         raise HTTPException(status_code=400, detail="invalid bundle: meta.purpose must be 'collect'")
+
+    if admit:
+        # Reject BEFORE consuming the one-time challenge, so a busy or unavailable instrument does not burn a capture.
+        # Best effort: another request could still take the slot between this check and processing.
+        try:
+            request.app.state.chroma_instrument.admit()
+        except InstrumentBusy as exc:
+            raise HTTPException(429, str(exc), headers={"Retry-After": "1"}) from exc
+        except InstrumentUnavailable as exc:
+            raise HTTPException(503, str(exc)) from exc
 
     sessions = request.app.state.sessions
     try:
@@ -106,14 +116,14 @@ async def preview(request: Request) -> dict:
 @router.post("/measure")
 async def measure(request: Request) -> dict:
     """Single-use issued capture; analyze in memory without persisting biometrics."""
-    bundle, entries = await read_bundle(request, require_label=False)
+    bundle, entries = await read_bundle(request, require_label=False, admit=True)
     return await process(request, request.app.state.chroma_instrument.analyze,
                          bundle, entries, request.app.state.sessions.cfg)
 
 
 @router.post("/bundles")
 async def post_bundle(request: Request, analyze: bool = False) -> dict:
-    bundle, entries = await read_bundle(request, require_label=True)
+    bundle, entries = await read_bundle(request, require_label=True, admit=analyze)
     report = None
     if analyze:
         report = await process(request, request.app.state.chroma_instrument.analyze,

@@ -31,6 +31,7 @@ def test_measure_requires_operator_token(client):
 
 
 def test_forged_challenge_is_rejected_before_any_processing(client, tmp_settings):
+    client.app.state.chroma_instrument.detector = object()  # admission passes; the forged-challenge check is what is under test
     sid, ch = issue(client)
     forged = ch.model_copy(update={"nonce": "forged-nonce-0123456789"})
     r = client.post("/api/v1/collect/measure", content=pack_bundle(make_entries(sid, forged, label=None)), headers={**AUTH, **CT})
@@ -43,6 +44,25 @@ def test_unavailable_model_is_503_and_nothing_is_stored(client, tmp_settings):
     r = client.post("/api/v1/collect/measure", content=pack_bundle(make_entries(sid, ch, label=None)), headers={**AUTH, **CT})
     assert r.status_code == 503
     assert not (tmp_settings.data_dir / "sessions").exists()
+    # the challenge was NOT consumed: retrying the same capture reports the same 503, not "already used" (409)
+    again = client.post("/api/v1/collect/measure", content=pack_bundle(make_entries(sid, ch, label=None)), headers={**AUTH, **CT})
+    assert again.status_code == 503
+
+
+def test_busy_instrument_is_429_and_does_not_consume_the_challenge(client):
+    sid, ch = issue(client)
+    blob = pack_bundle(make_entries(sid, ch, label=None))
+    inst = client.app.state.chroma_instrument
+    inst.detector = object()  # pretend loaded so only the busy check matters
+    assert inst.lock.acquire(blocking=False)
+    try:
+        r = client.post("/api/v1/collect/measure", content=blob, headers={**AUTH, **CT})
+        assert r.status_code == 429 and r.headers["retry-after"] == "1"
+    finally:
+        inst.lock.release()
+    inst.detector = None
+    # still unconsumed: the next attempt fails for the model (503), not because the session was burnt (409)
+    assert client.post("/api/v1/collect/measure", content=blob, headers={**AUTH, **CT}).status_code == 503
 
 
 @pytest.mark.models

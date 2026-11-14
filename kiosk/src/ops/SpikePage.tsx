@@ -8,6 +8,8 @@ import { recordSession, renderWith } from "../capture/recordSession";
 import { packBundle } from "../net/bundle";
 import type { Box, CameraInfo } from "../types/protocol";
 import { LivePreview } from "./LivePreview";
+import type { MeasureReport } from "./plotModel";
+import { ReportViewer } from "./ReportViewer";
 import { ApiError, getCollectChallenge, postBundle, postMeasure, type UploadResult } from "./api";
 import { buildLabel, CAPTURE_PROCEDURES, DEFAULT_FORM, LIGHTINGS, SKIN_TONES, SPECIES_BY_FAMILY, type LabelForm } from "./labels";
 
@@ -131,11 +133,13 @@ export function SpikePage() {
     }
   }, [settings.lock, settings.exposureTime, settings.colorTemperature]);
 
-  const [report, setReport] = useState<Record<string, unknown> | null>(null);
+  const [report, setReport] = useState<MeasureReport | null>(null);
+  const [crops, setCrops] = useState<Map<string, Uint8Array>>(new Map()); // latest capture only; replaced, never accumulated
   const record = useCallback(async (measureOnly = false) => {
     const built = measureOnly ? { label: null } : buildLabel(form);
     if ("errors" in built) return setMessage(built.errors.join("; "));
     setReport(null);
+    setCrops(new Map());
     const src = sourceRef.current;
     const overlay = overlayRef.current;
     if (!src || !overlay) return setMessage("start the camera first");
@@ -205,7 +209,8 @@ export function SpikePage() {
       );
       if (measureOnly) {
         const rep = await postMeasure(packBundle(rec.entries));
-        setReport(rep);
+        setCrops(new Map(rec.entries.filter(([n]) => n.startsWith("crops/")).map(([n, d]) => [n, d])));
+        setReport(rep as unknown as MeasureReport);
         setMessage(`measured (nothing stored); prep ${Math.round(rec.stats.preparationMs)} ms; capture ${Math.round(rec.stats.captureMs)} ms`);
         return;
       }
@@ -344,12 +349,7 @@ export function SpikePage() {
         <p data-testid="status-message">{message}</p>
       </fieldset>
 
-      {report && (
-        <fieldset data-testid="report">
-          <legend>Chroma measurement (experimental — NOT a liveness or access decision; E1/E2 not yet performed)</legend>
-          <pre style={{ maxHeight: 360, overflow: "auto", fontSize: 12 }}>{JSON.stringify(report, null, 1)}</pre>
-        </fieldset>
-      )}
+      {report && <ReportViewer report={report} crops={crops} />}
       <h3>This page's recordings ({log.filter((r) => r.result).length} uploaded)</h3>
       <table data-testid="log">
         <thead><tr><th>time</th><th>session</th><th>label</th><th>crops</th><th>fps</th><th>kf</th><th>result</th></tr></thead>

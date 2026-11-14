@@ -48,6 +48,12 @@ class ChromaInstrument:
         finally:
             self.lock.release()
 
+    def admit(self) -> None:
+        """Cheap pre-flight used before a one-time challenge is consumed: not busy, model loadable."""
+        if self.lock.locked():
+            raise InstrumentBusy("vision instrument busy; retry after current processing completes")
+        self.load()
+
     def load(self):
         if self.detector is not None:
             return
