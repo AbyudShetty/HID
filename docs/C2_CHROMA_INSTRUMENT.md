@@ -15,9 +15,12 @@
 - Real browser (fake camera): live preview returned the backend face detection (score 0.88, cold server 127 ms incl. 103 ms SCRFD; one sample, not a benchmark).
 - Headless Chrome + fake camera (`tools/cdp_spike_e2e.mjs --measure`): capture → `/measure` → report returned. The fake camera is a static photo, so the report is correctly `unavailable` (no temporal variation). This tests plumbing only — **not liveness evidence**.
 
+## Measured compute (this laptop; docs/EXPERIMENTS.md E4-1)
+Warm 320 px per-crop ≈ 31 ms p50 / 42 ms p95 — **over** the plan's ≤ 20 ms budget; 640 px preview ≈ 121 ms p50; feature extraction ≈ 4 ms. `/measure` analyses after capture, so it is an engineering instrument, not a 2 s decision path.
+
 ## Not done (next)
 - Post-capture selectable-crop viewer and response plots (the raw report is shown as JSON).
-- Malformed-header decoder tests; benchmarks (cold/warm inference, feature time); Docker validation; physical webcam verification by the owner.
+- Benchmark on the target AWS instance and with `det_500m`; Docker validation; physical webcam verification by the owner.
 - Known deviations: pixelwise specularity/uniformity features deferred (need defensible registration); `/measure` consumes the nonce before processing, so a busy/error response needs a new capture.
 - Camera exposure/WB: unchanged browser settings do not prove physical locking.
 

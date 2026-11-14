@@ -1,0 +1,29 @@
+{
+  "machine": {
+    "cpu_threads": 16,
+    "platform": "Windows-10-10.0.26300-SP0",
+    "python": "3.10.0"
+  },
+  "scrfd_load_ms": 59.7,
+  "first_preview_call_ms": 133.8,
+  "preview_640_warm": {
+    "n": 60,
+    "p50_ms": 121.42,
+    "p95_ms": 131.85,
+    "max_ms": 155.29
+  },
+  "captured_crop_320_warm": {
+    "n": 60,
+    "p50_ms": 30.6,
+    "p95_ms": 41.91,
+    "max_ms": 43.62
+  },
+  "feature_extraction_synthetic_36_frames": {
+    "n": 60,
+    "p50_ms": 3.8,
+    "p95_ms": 4.13,
+    "max_ms": 8.76
+  },
+  "note": "compute only; one machine; reference photo. Not decision latency. 36 crops x per-crop time approximates server work during a capture, which overlaps the >=1.2 s capture.",
+  "estimated_server_ms_for_36_crops_serial": 1101.6
+}
