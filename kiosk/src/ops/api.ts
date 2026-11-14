@@ -68,3 +68,8 @@ export interface UploadResult {
 export async function postBundle(body: ArrayBuffer): Promise<UploadResult> {
   return (await check(await fetch("/api/v1/collect/bundles", { method: "POST", headers: { ...auth(), "Content-Type": "application/x-hid-bundle" }, body }))) as UploadResult;
 }
+
+/** Measure-only: analysed in memory by the backend, nothing is stored. */
+export async function postMeasure(body: ArrayBuffer): Promise<Record<string, unknown>> {
+  return (await check(await fetch("/api/v1/collect/measure", { method: "POST", headers: { ...auth(), "Content-Type": "application/x-hid-bundle" }, body }))) as Record<string, unknown>;
+}

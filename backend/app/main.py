@@ -12,6 +12,7 @@ from .api import rest_collect, rest_ops, ws_kiosk
 from .challenge.sequence import ChallengeConfig
 from .config import Policy, Settings, load_policy
 from .model_registry import assert_no_tampering, verify_models
+from .pipeline.chroma_instrument import ChromaInstrument
 from .schemas import HealthResponse
 from .sessions.manager import SessionManager
 
@@ -25,6 +26,7 @@ def create_app(settings: Settings | None = None, policy: Policy | None = None) -
         statuses = verify_models(settings.models_dir)
         assert_no_tampering(statuses)  # raises ModelIntegrityError: refuse to start (plan §10.1)
         app.state.model_status = statuses
+        app.state.chroma_instrument = ChromaInstrument(settings, statuses, policy)
         yield
 
     app = FastAPI(title="HID liveness kiosk backend", version=__version__, lifespan=lifespan)

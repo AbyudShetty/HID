@@ -1,4 +1,4 @@
-// Records one challenge session into a bundle (plan §8.5, §9.3). Shared by the spike page now and the production kiosk
+// Records one challenge session into a bundle (plan Â§8.5, Â§9.3). Shared by the spike page now and the production kiosk
 // later (F-14). V2 experiment times use measurement-start zero AFTER explicitly reported light preparation.
 // This is not the official access t_lock metric: future access timing must include all work after face lock.
 import { runChallenge, type DisplayedSegment, type RenderDeps, type RenderResult } from "../challenge/renderer";
@@ -58,6 +58,7 @@ const json = (v: unknown) => enc.encode(JSON.stringify(v));
 
 export async function recordSession(params: RecordParams, deps: RecordDeps): Promise<RecordedSession> {
   const { challenge } = params;
+  const cameraStart = deps.source.info();
   const neutralMs = challenge.neutral.duration_ms;
   let tMeasurementStart: number | null = null;
   const grabbed: Grabbed[] = [];
@@ -73,7 +74,7 @@ export async function recordSession(params: RecordParams, deps: RecordDeps): Pro
   const plan = (now: number): GrabRequest | null => {
     if (!rendering || tMeasurementStart === null || now < tMeasurementStart) return null;
     const req: GrabRequest = { crop: { box: params.cropBox, size: params.cropSize }, quality: params.jpegQuality };
-    // keyframes: only while the neutral colour is on screen and has settled (plan §3.2 #2, §9.3)
+    // keyframes: only while the neutral colour is on screen and has settled (plan Â§3.2 #2, Â§9.3)
     if (
       neutralDisplayedAt !== null &&
       keyframes.length < params.keyframeCount &&
@@ -144,12 +145,13 @@ export async function recordSession(params: RecordParams, deps: RecordDeps): Pro
       created_at: deps.isoNow(),
       client_version: params.meta.client_version,
       server_version: params.meta.server_version,
+      ...(JSON.stringify(cameraStart.settings) === JSON.stringify(cam.settings) ? {} : { camera_settings_end: cam.settings }),
       camera: {
         width: cam.width || size.width,
         height: cam.height || size.height,
         fps: cam.fps,
         lock_method: cam.lock_method,
-        settings: cam.settings,
+        settings: cameraStart.settings,
         label: cam.label,
       },
       display: params.meta.display,

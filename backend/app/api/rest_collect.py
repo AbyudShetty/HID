@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from starlette.concurrency import run_in_threadpool
 
 from .. import __version__
 from ..pipeline.bundle_io import (
@@ -19,9 +20,11 @@ from ..pipeline.bundle_io import (
     unpack_bundle,
     write_bundle,
 )
+from ..pipeline.chroma_instrument import InstrumentBusy, InstrumentUnavailable
 from ..pipeline.measurement import validate_measurement
 from ..schemas import CaptureConfig
 from ..sessions.manager import SessionError
+from ..vision.decode import DecodeError
 from .auth import require_operator
 
 router = APIRouter(prefix="/api/v1/collect", dependencies=[Depends(require_operator)])
@@ -41,8 +44,7 @@ async def get_challenge(request: Request, palette_id: Literal["P1", "P2"] | None
     return body
 
 
-@router.post("/bundles")
-async def post_bundle(request: Request) -> dict:
+async def read_bundle(request: Request, *, require_label: bool):
     if request.headers.get("content-type", "").split(";")[0].strip() != BUNDLE_CONTENT_TYPE:
         raise HTTPException(status_code=415, detail=f"Content-Type must be {BUNDLE_CONTENT_TYPE}")
     declared = request.headers.get("content-length")
@@ -62,7 +64,7 @@ async def post_bundle(request: Request) -> dict:
         validate_measurement(bundle, request.app.state.sessions.cfg)
     except BundleError as exc:
         raise HTTPException(status_code=400, detail=f"invalid bundle: {exc}") from exc
-    if bundle.label is None:
+    if require_label and bundle.label is None:
         raise HTTPException(status_code=400, detail="invalid bundle: collect bundles require label.json")
     if bundle.meta.purpose != "collect":
         raise HTTPException(status_code=400, detail="invalid bundle: meta.purpose must be 'collect'")
@@ -75,6 +77,47 @@ async def post_bundle(request: Request) -> dict:
     if issued.challenge != bundle.challenge.challenge:
         raise HTTPException(status_code=400, detail="invalid bundle: the challenge does not match the one the server issued")
 
+    return bundle, entries
+
+
+async def process(request: Request, method, *args):
+    try:
+        return await run_in_threadpool(method, *args)
+    except InstrumentBusy as exc:
+        raise HTTPException(429, str(exc), headers={"Retry-After": "1"}) from exc
+    except InstrumentUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except (DecodeError, ValueError) as exc:
+        raise HTTPException(400, f"invalid measurement: {exc}") from exc
+
+
+@router.post("/preview")
+async def preview(request: Request) -> dict:
+    if request.headers.get("content-type", "").split(";")[0] != "image/jpeg":
+        raise HTTPException(415, "Content-Type must be image/jpeg")
+    data = bytearray()
+    async for chunk in request.stream():
+        if len(data) + len(chunk) > 400 * 1024:
+            raise HTTPException(413, "preview image too large")
+        data.extend(chunk)
+    return await process(request, request.app.state.chroma_instrument.preview, bytes(data))
+
+
+@router.post("/measure")
+async def measure(request: Request) -> dict:
+    """Single-use issued capture; analyze in memory without persisting biometrics."""
+    bundle, entries = await read_bundle(request, require_label=False)
+    return await process(request, request.app.state.chroma_instrument.analyze,
+                         bundle, entries, request.app.state.sessions.cfg)
+
+
+@router.post("/bundles")
+async def post_bundle(request: Request, analyze: bool = False) -> dict:
+    bundle, entries = await read_bundle(request, require_label=True)
+    report = None
+    if analyze:
+        report = await process(request, request.app.state.chroma_instrument.analyze,
+                               bundle, entries, request.app.state.sessions.cfg)
     root = request.app.state.settings.data_dir / "sessions"
     root.mkdir(parents=True, exist_ok=True)
     try:
@@ -83,6 +126,7 @@ async def post_bundle(request: Request) -> dict:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     qc = quality_check(bundle)
     return {
+        **({"measurement": report} if report is not None else {}),
         "session_id": bundle.session_id,
         "stored": f"sessions/{bundle.session_id}",
         "qc": {

@@ -7,7 +7,7 @@ import { loadFaceDetector, type FramingDetector } from "../capture/faceDetector"
 import { recordSession, renderWith } from "../capture/recordSession";
 import { packBundle } from "../net/bundle";
 import type { Box, CameraInfo } from "../types/protocol";
-import { ApiError, getCollectChallenge, postBundle, type UploadResult } from "./api";
+import { ApiError, getCollectChallenge, postBundle, postMeasure, type UploadResult } from "./api";
 import { buildLabel, CAPTURE_PROCEDURES, DEFAULT_FORM, LIGHTINGS, SKIN_TONES, SPECIES_BY_FAMILY, type LabelForm } from "./labels";
 
 const FORM_KEY = "hid_spike_form";
@@ -130,9 +130,11 @@ export function SpikePage() {
     }
   }, [settings.lock, settings.exposureTime, settings.colorTemperature]);
 
-  const record = useCallback(async () => {
-    const built = buildLabel(form);
+  const [report, setReport] = useState<Record<string, unknown> | null>(null);
+  const record = useCallback(async (measureOnly = false) => {
+    const built = measureOnly ? { label: null } : buildLabel(form);
     if ("errors" in built) return setMessage(built.errors.join("; "));
+    setReport(null);
     const src = sourceRef.current;
     const overlay = overlayRef.current;
     if (!src || !overlay) return setMessage("start the camera first");
@@ -200,9 +202,16 @@ export function SpikePage() {
           isoNow: () => new Date().toISOString(),
         },
       );
+      if (measureOnly) {
+        const rep = await postMeasure(packBundle(rec.entries));
+        setReport(rep);
+        setMessage(`measured (nothing stored); prep ${Math.round(rec.stats.preparationMs)} ms; capture ${Math.round(rec.stats.captureMs)} ms`);
+        return;
+      }
+      if (!built.label) throw new Error("label required");
       const result = await postBundle(packBundle(rec.entries));
       const stats = { nCrops: rec.stats.nCrops, nKeyframes: rec.stats.nKeyframes, cropFps: rec.stats.cropFps, skipped: rec.stats.skippedSegments, captureTimeSource: rec.stats.captureTimeSource };
-      setLog((l) => [{ at: startedAt, session_id: sessionId, summary: `${built.label.class}${built.label.pai_species !== "none" ? ` / ${built.label.pai_species}` : ""}`, result, stats }, ...l]);
+      setLog((l) => [{ at: startedAt, session_id: sessionId, summary: `${built.label!.class}${built.label!.pai_species !== "none" ? ` / ${built.label!.pai_species}` : ""}`, result, stats }, ...l]);
       const timing = `prep ${Math.round(rec.stats.preparationMs)} ms; capture ${Math.round(rec.stats.captureMs)} ms; request→idle ${Math.round(rec.stats.requestToIdleMs)} ms`;
       setMessage(result.qc.warnings.length ? `uploaded with warnings: ${result.qc.warnings.join("; ")}; ${timing}` : `uploaded OK; ${timing}`);
     } catch (e) {
@@ -327,10 +336,17 @@ export function SpikePage() {
         </label>
         <label>countdown s<input type="number" min={0} max={10} value={settings.countdown} onChange={(e) => setS("countdown", Number(e.target.value))} /></label>
         <label>fullscreen <input type="checkbox" checked={settings.fullscreen} onChange={(e) => setS("fullscreen", e.target.checked)} /></label>
-        <button data-testid="record" onClick={record} disabled={busy}>{busy ? "recording…" : "Record session"}</button>
+        <button data-testid="record" onClick={() => record(false)} disabled={busy}>{busy ? "recording…" : "Record session (labelled, stored)"}</button>
+        <button data-testid="measure" onClick={() => record(true)} disabled={busy}>Measure only — no storage</button>
         <p data-testid="status-message">{message}</p>
       </fieldset>
 
+      {report && (
+        <fieldset data-testid="report">
+          <legend>Chroma measurement (experimental — NOT a liveness or access decision; E1/E2 not yet performed)</legend>
+          <pre style={{ maxHeight: 360, overflow: "auto", fontSize: 12 }}>{JSON.stringify(report, null, 1)}</pre>
+        </fieldset>
+      )}
       <h3>This page's recordings ({log.filter((r) => r.result).length} uploaded)</h3>
       <table data-testid="log">
         <thead><tr><th>time</th><th>session</th><th>label</th><th>crops</th><th>fps</th><th>kf</th><th>result</th></tr></thead>

@@ -453,6 +453,7 @@ class SessionMeta(Strict):
     client_version: str
     server_version: str
     camera: BundleCamera
+    camera_settings_end: dict[str, Any] | None = None
     display: DisplayInfo
     kiosk_profile_version: str | None = None
     policy_version: str | None = None
