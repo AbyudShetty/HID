@@ -7,6 +7,7 @@ import { loadFaceDetector, type FramingDetector } from "../capture/faceDetector"
 import { recordSession, renderWith } from "../capture/recordSession";
 import { packBundle } from "../net/bundle";
 import type { Box, CameraInfo } from "../types/protocol";
+import { LivePreview } from "./LivePreview";
 import { ApiError, getCollectChallenge, postBundle, postMeasure, type UploadResult } from "./api";
 import { buildLabel, CAPTURE_PROCEDURES, DEFAULT_FORM, LIGHTINGS, SKIN_TONES, SPECIES_BY_FAMILY, type LabelForm } from "./labels";
 
@@ -269,6 +270,8 @@ export function SpikePage() {
           <button data-testid="start-camera" onClick={startCamera} disabled={busy}>Start / restart camera</button>
         </fieldset>
       </div>
+
+      <LivePreview video={camStatus === "camera on" ? videoRef.current : null} active={camStatus === "camera on" && !busy} />
 
       <fieldset>
         <legend>Label (plan §8.6)</legend>

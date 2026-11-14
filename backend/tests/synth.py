@@ -1,5 +1,6 @@
 """Controlled synthetic signals only. Not a physical face/attack simulator or liveness evidence."""
 import json
+import random
 
 import numpy as np
 
@@ -12,7 +13,7 @@ from tests.bundle_factory import make_entries
 
 
 def signal(seed=7, lag=65, noise=0.0005, gain=0.15, background_gain=0.03):
-    challenge = generate()
+    challenge = generate(rng=random.Random(seed))  # reproducible fixtures
     record = ChallengeRecord.model_validate(json.loads(make_entries("s_test", challenge)["challenge.json"]))
     t = np.arange(0, record.timing.capture_end_ms, 1000 / 30)
     drive = emitted(record, t, lag) - SRGB_TO_LINEAR[list(challenge.neutral.rgb)]

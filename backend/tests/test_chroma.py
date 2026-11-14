@@ -68,8 +68,13 @@ def test_motion_multiple_faces_clipping_and_low_snr():
     assert "MULTIPLE_SIGNIFICANT_FACES" in extract_features(build_series(multi), rec)["reasons"]
     clipped = [replace(f, regions={k: replace(v, clipped_frac=.5) for k, v in f.regions.items()}) for f in frames]
     assert "CLIPPED_REGION:nose" in extract_features(build_series(clipped), rec)["reasons"]
-    rec, _, series = signal(gain=.001, noise=.01)
+    rec, _, series = signal(seed=8, gain=.001, noise=.01)
     assert "LOW_SNR" in extract_features(series, rec)["reasons"]
+    # whatever the noise does to the lag search, a signal-free capture is never reported as usable
+    for seed in range(7, 15):
+        rec, _, series = signal(seed=seed, gain=.001, noise=.01)
+        out = extract_features(series, rec)
+        assert out["status"] != "ok" and out["reasons"]
 
 
 def test_no_response_and_no_background_do_not_manufacture_scores():

@@ -73,3 +73,17 @@ export async function postBundle(body: ArrayBuffer): Promise<UploadResult> {
 export async function postMeasure(body: ArrayBuffer): Promise<Record<string, unknown>> {
   return (await check(await fetch("/api/v1/collect/measure", { method: "POST", headers: { ...auth(), "Content-Type": "application/x-hid-bundle" }, body }))) as Record<string, unknown>;
 }
+
+export interface PreviewResult {
+  image_size: [number, number];
+  face: { box: number[]; score: number; landmarks: number[][] } | null;
+  significant_faces: number;
+  regions: Record<string, { mean_rgb: number[] | null; pixels: number; clipped_fraction: number; paths: number[][][] }>;
+  timings_ms: Record<string, number>;
+  model_load_ms?: number;
+  model?: string;
+}
+
+export async function postPreview(jpeg: Blob): Promise<PreviewResult> {
+  return (await check(await fetch("/api/v1/collect/preview", { method: "POST", headers: { ...auth(), "Content-Type": "image/jpeg" }, body: jpeg }))) as PreviewResult;
+}

@@ -126,6 +126,8 @@ if (camStatus !== "camera on") {
 await waitFor(`/MediaPipe ready|no detector/.test(document.body.innerText)`, 30000, "detector status");
 const detector = await evaluate(`(document.body.innerText.match(/MediaPipe ready|no detector[^\\n]*/) || [''])[0]`);
 await sleep(1500); // let a few detections accumulate
+await waitFor(`!!document.querySelector('[data-testid=preview-summary]') || !!document.querySelector('[data-testid=preview-error]')`, 30000, "live preview");
+const previewSummary = await evaluate(`(document.querySelector('[data-testid=preview-summary]') || document.querySelector('[data-testid=preview-error]')).textContent`);
 
 const results = [];
 for (let i = 0; i < N; i++) {
@@ -147,7 +149,7 @@ for (let i = 0; i < N; i++) {
 }
 const report = MEASURE ? await evaluate(`document.querySelector('[data-testid=report] pre')?.textContent ?? null`) : null;
 const failed = results.filter((r) => STALL_MS > 0 ? !r.msg.includes("invalid measurement: CAPTURE_OVERRUN") : !/^(uploaded|measured)/.test(r.msg)).length;
-console.log(JSON.stringify({ report: report ? JSON.parse(report) : null, ok: failed === 0, mode: STALL_MS > 0 ? "synthetic-stall-rejection" : "simulated-camera-capture", detector, camStatus, n: N, failed, results, consoleMsgs }, null, 1));
+console.log(JSON.stringify({ previewSummary, report: report ? JSON.parse(report) : null, ok: failed === 0, mode: STALL_MS > 0 ? "synthetic-stall-rejection" : "simulated-camera-capture", detector, camStatus, n: N, failed, results, consoleMsgs }, null, 1));
 ws.close();
 cleanup();
 process.exit(failed === 0 ? 0 : 1);
