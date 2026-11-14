@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hid-liveness-backend"
+version = "0.1.0"
+description = "HID face liveness + authentication kiosk backend (plan.md v1.1)"
+requires-python = ">=3.10"
+# Exact pins (plan §7.3). Only dependencies on the allowed list.
+# The serving image uses opencv-python-headless; keep this in sync with tools/requirements-host.txt (GUI OpenCV).
+dependencies = [
+  "fastapi==0.162.5",
+  "uvicorn[standard]==0.54.0",
+  "pydantic==2.14.3",
+  "pydantic-settings==2.15.0",
+  "numpy==2.2.6",
+  "opencv-python-headless==5.0.0.93",
+  "onnxruntime==1.23.2",
+  "scikit-learn==1.7.2",
+  "scipy==1.15.3",
+  "pyyaml==6.0.3",
+  "pyotp==2.10.0",
+  "boto3==1.44.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.4.2",
+  "pytest-asyncio==1.5.0",
+  "httpx==0.28.1",
+  "ruff==0.17.5",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+markers = [
+  "models: needs model files in ./models (run with `make test-models`)",
+  "integration: in-process end-to-end tests (run with `make test-integration`)",
+]
+filterwarnings = ["ignore::DeprecationWarning", "ignore:Using .httpx. with .starlette.testclient.*"]

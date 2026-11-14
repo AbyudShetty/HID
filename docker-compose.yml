@@ -1,0 +1,21 @@
+# Development stack: backend only (the kiosk runs with `npm run dev`, which proxies /api to :8000).
+# Later profiles (plan §15.5): `prod` publishes host port 80; `caddy` adds TLS; `edge` is the venue-network fallback.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+    image: hid-kiosk-backend:dev
+    ports:
+      - "8000:8000"
+    environment:
+      KIOSK_TOKEN: ${KIOSK_TOKEN:-}
+      OPERATOR_TOKEN: ${OPERATOR_TOKEN:-}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      AWS_REGION: ${AWS_REGION:-}
+      AUDIT_SAVE_FRAMES: ${AUDIT_SAVE_FRAMES:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - ./models:/app/models:ro
+      - ./data:/app/data
+    restart: unless-stopped

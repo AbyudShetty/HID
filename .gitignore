@@ -1,0 +1,42 @@
+# data, models, secrets (plan §2.2 step 6: never commit these)
+data/
+models/*.onnx
+models/*.pth
+models/*.zip
+models/_download/
+.env
+.env.*
+!.env.example
+.local/
+
+# python
+.venv/
+.venv-host/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# node
+node_modules/
+dist/
+kiosk/.vite/
+kiosk/coverage/
+
+# experiments: raw outputs are large; reports + small json stay
+experiments/**/raw/
+experiments/**/*.avi
+experiments/**/*.mp4
+experiments/**/*.npz
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# MediaPipe assets are fetched by `npm run assets` (not committed)
+kiosk/public/mediapipe/

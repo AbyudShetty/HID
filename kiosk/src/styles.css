@@ -1,0 +1,27 @@
+:root { font-family: system-ui, Segoe UI, Roboto, sans-serif; color: #0f172a; background: #f8fafc; }
+body { margin: 0; }
+.ops header { display: flex; gap: 24px; align-items: center; padding: 12px 20px; background: #0b1f44; color: #fff; }
+.ops nav { display: flex; gap: 14px; flex: 1; }
+.ops nav a { color: #cbd5e1; text-decoration: none; }
+.ops nav a.active { color: #fff; font-weight: 600; }
+.banner { background: #b45309; color: #fff; text-align: center; padding: 8px; font-weight: 700; letter-spacing: .04em; }
+.panel { max-width: 960px; margin: 24px auto; padding: 20px 24px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+.panel th { text-align: left; padding-right: 24px; color: #475569; font-weight: 500; vertical-align: top; }
+.pill { padding: 2px 10px; border-radius: 999px; background: #475569; font-size: 12px; }
+.pill.ready { background: #15803d; }
+.pill.failed { background: #b91c1c; }
+.pill.connecting, .pill.authenticating { background: #b45309; }
+.kiosk { min-height: 100vh; display: grid; place-items: center; }
+
+.spike .hint { color: #64748b; font-size: 13px; }
+.spike .row { display: flex; gap: 24px; flex-wrap: wrap; }
+.spike fieldset { border: 1px solid #e2e8f0; border-radius: 8px; margin: 12px 0; }
+.spike label { display: block; margin: 6px 0; font-size: 13px; }
+.spike label input, .spike label select { display: block; }
+.spike .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 16px; }
+.spike table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.spike td, .spike th { border-bottom: 1px solid #e2e8f0; padding: 3px 6px; text-align: left; }
+.videobox { position: relative; width: 480px; }
+.videobox video { width: 480px; background: #000; display: block; }
+.videobox .boxes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.challenge-overlay { display: none; position: fixed; inset: 0; z-index: 9999; background: rgb(205,205,205); color: rgba(0,0,0,.35); font-size: 28px; text-align: center; padding-top: 3vh; }

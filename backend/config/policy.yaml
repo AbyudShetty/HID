@@ -1,0 +1,60 @@
+# Decision policy (plan §11.3). Every threshold is {value, source}.
+# source: final | provisional | preliminary:<origin> | calibrated:<run_id> | uncalibrated (value must be null)
+# The loader (app/config.py) enforces these rules. All initial values are PROVISIONAL: nothing here has been calibrated.
+version: "2026-11-14-provisional"
+status: provisional            # provisional | calibrated  ("calibrated" only when every leaf is final or calibrated:*)
+architecture: primary          # primary | primary_partial | fallback_f2  (set at gate G1)
+required_signals: [chroma, passive]
+quality:
+  min_interocular_px:  {value: 50,   source: provisional}
+  max_yaw_proxy:       {value: 0.25, source: provisional}   # (nose_x - eye_mid_x)/d
+  max_pitch_proxy:     {value: 0.30, source: provisional}   # deviation of (nose_y - eye_mid_y)/d from enrolled norm
+  min_blur_var:        {value: 60,   source: provisional}   # Laplacian variance on 112x112 aligned gray
+  face_luma_range:     {value: [50, 210], source: provisional}
+  max_clipped_frac:    {value: 0.05, source: provisional}
+  max_motion_frac:     {value: 0.12, source: provisional}   # face-center displacement / face size over capture
+  min_frames_frac:     {value: 0.80, source: provisional}
+  secondary_face_ratio: {value: 0.50, source: final}        # faces smaller than this x primary are ignored
+chroma:
+  min_snr:             {value: 3.0,  source: provisional}
+  veto_p_spoof:        {value: 0.98, source: provisional}
+  floor_p_live:        {value: 0.50, source: provisional}
+  sync_veto_corr:      {value: 0.20, source: provisional}   # sync below this with status ok => spoof veto
+passive:
+  veto_p_spoof:        {value: 0.98, source: provisional}
+  floor_p_live:        {value: 0.30, source: provisional}
+fusion:
+  method: min_provisional      # min_provisional | lr
+  tau_allow:           {value: 0.90, source: provisional}
+  tau_deny:            {value: 0.20, source: provisional}
+  tau_stepup_live:     {value: 0.60, source: provisional}   # min p_fused for PIN/TOTP to rescue an RV
+identity:
+  tau_match_1to1:      {value: null, source: uncalibrated}  # MUST be calibrated before identity can ALLOW
+  tau_reject_1to1:     {value: null, source: uncalibrated}
+  tau_match_1toN:      {value: null, source: uncalibrated}
+  tau_reject_1toN:     {value: null, source: uncalibrated}
+  min_margin_1toN:     {value: 0.08, source: provisional}
+  tau_enroll_consistency: {value: 0.55, source: provisional}
+# Structural settings (not thresholds): plain values
+stepup:
+  max_attempts: 2
+  token_ttl_s: 60
+rate_limit:
+  spoof_deny_window_s: 600
+  spoof_deny_max: 3
+  lockout_s: 60
+timing:
+  server_deadline_ms: 1750     # after session.start receipt; finalize with what we have
+  client_watchdog_ms: 1950     # after t_lock; show RV(TIMEOUT) if no result
+# Challenge defaults (plan §9.2). GATED (G-03): decided at G1 from experiment E2; until then these defaults apply.
+# segment_ms/jitter_ms and min_delta_linear deviate from the plan text; see docs/DECISIONS.md ADR-005.
+challenge:
+  neutral_ms: 200
+  segments: 3
+  segment_ms: 340
+  jitter_ms: 30
+  total_cap_ms: 1300
+  palette_id: P1
+  max_transitions_per_s: 3
+  min_delta_linear: 0.30
+  prefetch_ttl_s: 30

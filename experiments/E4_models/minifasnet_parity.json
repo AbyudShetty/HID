@@ -1,0 +1,19 @@
+{
+  "torch": "2.14.1+cpu",
+  "onnxruntime": "1.23.2",
+  "tolerance": 0.0001,
+  "models": {
+    "minifasnet_v2_onnx": {
+      "max_abs_logit_diff": 5.364418029785156e-06,
+      "pass": true,
+      "onnx_sha256": "67425150cb9311d5f96d18f42bc2ad0b88c3278719fc2b6f1e5002703559474d",
+      "n_crops": 12
+    },
+    "minifasnet_v1se_onnx": {
+      "max_abs_logit_diff": 5.602836608886719e-06,
+      "pass": true,
+      "onnx_sha256": "a4005ca4453a6f738a123fa5113bcdc1e9f86cf62c4ce132a4c0eff4eb793d6e",
+      "n_crops": 12
+    }
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "note": "sha256 values are pinned with `python tools/download_models.py --pin` after the first download (trust-on-first-use; the pinned value then guards against later tampering). Entries with an empty sha256 are 'unpinned' and are NOT treated as loaded by the backend.",
+  "packs": [
+    {
+      "name": "buffalo_l",
+      "url": "https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip",
+      "file": "_download/buffalo_l.zip",
+      "members": [
+        "det_10g.onnx",
+        "w600k_r50.onnx"
+      ]
+    },
+    {
+      "name": "buffalo_s",
+      "url": "https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_s.zip",
+      "file": "_download/buffalo_s.zip",
+      "members": [
+        "det_500m.onnx",
+        "w600k_mbf.onnx"
+      ]
+    }
+  ],
+  "models": [
+    {
+      "name": "scrfd_det_10g",
+      "file": "det_10g.onnx",
+      "pack": "buffalo_l",
+      "required": true,
+      "sha256": "5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91",
+      "license": "InsightFace pretrained models: non-commercial research only",
+      "version": "buffalo_l/det_10g",
+      "use": "face detection + 5 landmarks (SCRFD)",
+      "size_bytes": 16923827
+    },
+    {
+      "name": "arcface_w600k_r50",
+      "file": "w600k_r50.onnx",
+      "pack": "buffalo_l",
+      "required": true,
+      "sha256": "4c06341c33c2ca1f86781dab0e829f88ad5b64be9fba56e56bc9ebdefc619e43",
+      "license": "InsightFace pretrained models: non-commercial research only",
+      "version": "buffalo_l/w600k_r50",
+      "use": "identity embeddings (ArcFace R50)",
+      "size_bytes": 174383860
+    },
+    {
+      "name": "scrfd_det_500m",
+      "file": "det_500m.onnx",
+      "pack": "buffalo_s",
+      "required": false,
+      "sha256": "5e4447f50245bbd7966bd6c0fa52938c61474a04ec7def48753668a9d8b4ea3a",
+      "license": "InsightFace pretrained models: non-commercial research only",
+      "version": "buffalo_s/det_500m",
+      "use": "candidate lighter detector (experiment E4, decision G-06)",
+      "size_bytes": 2524817
+    },
+    {
+      "name": "arcface_w600k_mbf",
+      "file": "w600k_mbf.onnx",
+      "pack": "buffalo_s",
+      "required": false,
+      "sha256": "9cc6e4a75f0e2bf0b1aed94578f144d15175f357bdc05e815e5c4a02b319eb4f",
+      "license": "InsightFace pretrained models: non-commercial research only",
+      "version": "buffalo_s/w600k_mbf",
+      "use": "candidate lighter ArcFace (experiment E4, decision G-06)",
+      "size_bytes": 13616099
+    },
+    {
+      "name": "minifasnet_v2_pth",
+      "file": "2.7_80x80_MiniFASNetV2.pth",
+      "url": "https://raw.githubusercontent.com/minivision-ai/Silent-Face-Anti-Spoofing/master/resources/anti_spoof_models/2.7_80x80_MiniFASNetV2.pth",
+      "required": false,
+      "sha256": "a5eb02e1843f19b5386b953cc4c9f011c3f985d0ee2bb9819eea9a142099bec0",
+      "license": "Apache-2.0 (minivision-ai/Silent-Face-Anti-Spoofing)",
+      "version": "minivision@master",
+      "use": "source weights for ONNX export (tooling only)",
+      "size_bytes": 1849453
+    },
+    {
+      "name": "minifasnet_v1se_pth",
+      "file": "4_0_0_80x80_MiniFASNetV1SE.pth",
+      "url": "https://raw.githubusercontent.com/minivision-ai/Silent-Face-Anti-Spoofing/master/resources/anti_spoof_models/4_0_0_80x80_MiniFASNetV1SE.pth",
+      "required": false,
+      "sha256": "84ee1d37d96894d5e82de5a57df044ef80a58be2b218b5ed7cdfd875ec2f5990",
+      "license": "Apache-2.0 (minivision-ai/Silent-Face-Anti-Spoofing)",
+      "version": "minivision@master",
+      "use": "source weights for ONNX export (tooling only)",
+      "size_bytes": 1856130
+    },
+    {
+      "name": "minifasnet_v2_onnx",
+      "file": "minifasnet_v2_2.7_80x80.onnx",
+      "export": "tools/export_minifasnet.py",
+      "required": true,
+      "sha256": "67425150cb9311d5f96d18f42bc2ad0b88c3278719fc2b6f1e5002703559474d",
+      "license": "Apache-2.0 (minivision-ai/Silent-Face-Anti-Spoofing)",
+      "version": "minifasnet_v2@scale2.7",
+      "use": "passive liveness (scale 2.7 crop, 80x80)",
+      "size_bytes": 1744201,
+      "export_info": {
+        "source_pth": "2.7_80x80_MiniFASNetV2.pth",
+        "source_pth_sha256": "a5eb02e1843f19b5386b953cc4c9f011c3f985d0ee2bb9819eea9a142099bec0",
+        "torch": "2.14.1+cpu",
+        "opset": 13,
+        "preprocess": "BGR, float32, 0..255 (no /255), NCHW 1x3x80x80; real class index = 1",
+        "crop_scale": 2.7
+      }
+    },
+    {
+      "name": "minifasnet_v1se_onnx",
+      "file": "minifasnet_v1se_4.0_80x80.onnx",
+      "export": "tools/export_minifasnet.py",
+      "required": true,
+      "sha256": "a4005ca4453a6f738a123fa5113bcdc1e9f86cf62c4ce132a4c0eff4eb793d6e",
+      "license": "Apache-2.0 (minivision-ai/Silent-Face-Anti-Spoofing)",
+      "version": "minifasnet_v1se@scale4.0",
+      "use": "passive liveness (scale 4.0 crop, 80x80)",
+      "size_bytes": 1743369,
+      "export_info": {
+        "source_pth": "4_0_0_80x80_MiniFASNetV1SE.pth",
+        "source_pth_sha256": "84ee1d37d96894d5e82de5a57df044ef80a58be2b218b5ed7cdfd875ec2f5990",
+        "torch": "2.14.1+cpu",
+        "opset": 13,
+        "preprocess": "BGR, float32, 0..255 (no /255), NCHW 1x3x80x80; real class index = 1",
+        "crop_scale": 4.0
+      }
+    }
+  ]
+}
