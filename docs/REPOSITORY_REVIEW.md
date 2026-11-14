@@ -3,6 +3,8 @@
 Review checkpoint, before feature implementation. Owner: Abyud; engineering review: Codex.
 No commits, staging, pushes, resets, history changes, model exports, or data deletion performed.
 
+Historical C0 report. The owner subsequently committed `63668f9`, approved the implementation direction and moved the plan/original poster into ignored `.local/`. Current C1 status and repaired findings are in `C1_MEASUREMENT.md`; the original observations below describe the reviewed baseline.
+
 ## Sources and provenance
 
 - Read all 2,070 original lines of `plan.md`, all five ADRs, gates, human tasks, progress, experiments, results, consent/setup documents, backend/frontend source and tests, task/config files, Docker files, model manifest/download/export tools and vendored model definition.

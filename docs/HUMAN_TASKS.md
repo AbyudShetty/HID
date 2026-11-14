@@ -26,7 +26,7 @@ Things only a person can do (plan §2.4). Each entry: what / why / how / how lon
 
 ### H-04 — Run the E1 camera experiment (blocked on tooling and renderer fixes)
 - **Correction from repository review:** `tools/camera_probe_native.py`, `experiments/E1_camera/README.md` and `report.md` do not exist; `/ops/camera-probe` is an explicit unimplemented route. The previous claim of a native self-run had no artifact and is withdrawn. **No E1 experiment has been conducted.**
-- **Engineering prerequisites:** C1 actual-render timing/abort/cooldown correction, C2 browser/native probes and synthetic step-response checks, reproducible GUI-camera environment instructions.
+- **Engineering prerequisites:** C1 timing/abort/cooldown correction is implemented and software-tested. Browser/native probes, synthetic step-response checks and reproducible GUI-camera instructions are owner C3 work (after C2/T1.6).
 - **Then:** use the intended rig from H-03, run each capture path, record camera/OS/browser/lighting/settings and actual frame response, and export raw probe data. The engineer will provide tested exact commands when the tools exist.
 - **Time:** ~30 min per camera once prepared. **Status:** open, not ready for execution. Do not treat the existing spike's reported `lock_applied` as evidence of a camera lock.
 
@@ -47,18 +47,17 @@ _None yet._
 ## Takeover review checkpoint — owner input
 
 ### H-07 — Locate both surprise-challenge photographs
-- Only the original `HID_Hackathon_Challenge_Reveal.jpg` is available. Please attach the two surprise photographs or provide their local paths. The engineer has planned against your transcription and has not claimed visual verification of either photograph.
+- C1 inspection: `docs/reference/` does not exist in this checkout. Only the original poster is available, now under ignored `.local/`. Please add the two surprise photographs or provide their actual paths. The engineer has used your transcription and has not claimed visual verification of either photograph.
 - Needed before freezing surprise requirements; does not prevent safe tooling work. **Status:** open.
 
-### H-08 — Review concrete architecture proposals
-- Read `plan.md` §26 and `docs/DECISIONS.md` ADR-006–009; evidence and limitations are in `docs/REPOSITORY_REVIEW.md`.
-- Decide on the local edge gateway using the same Python pipeline; typed campus authorization guarding every ALLOW; signed/encrypted cache and metadata-only audit outbox.
-- Product/security choice: permit explicitly eligible, freshly locally verified **warm-runtime** offline access with at most **15 minutes** revocation staleness, or keep offline ALLOW disabled. Restart-offline never grants automatically. No instantaneous revocation is claimed during a disconnect.
-- Dependency choice: approve `cryptography==50.0.2` and direct `tzdata==2026.6`. Neither was installed or added in the review.
-- These approval requests come from the project's existing `plan.md` §2.5 rule for changes to FINAL architecture and new dependencies, and your request to review important architectural decisions before implementation. The proposals are now concrete and reviewable. **Status:** pending owner review; G0/G1 approval remains separate.
+### H-08 — Architecture approvals recorded (resolved)
+- Owner approved ADR-001–004, ADR-005 amendment, shared Python logic in an independent lightweight local runtime and central service, SQLite cache/outbox, signed versioned campus policies, encrypted limited identity templates and automatic audit synchronization.
+- Restricted offline ALLOW is approved only under every guard, with maximum 15-minute revocation staleness (implementation refuses at age ≥900 seconds). Successful step-up still requires authorization. No elaborate gateway, microservice ecosystem or Kubernetes.
+- `cryptography` and `tzdata` are approved when needed. Neither was installed or added during C1.
+- ADR-005 is implemented/tested at C1; remaining architecture is scheduled, not falsely marked implemented. No repeat approval is needed for these choices; E1/E2/G1 remain evidence-gated.
 
 ### H-09 — Checkpoints, Git and available experiment time
-- Per your latest instruction, stop after meaningful milestones for owner review/commits/manual verification. C0 is the current checkpoint; see `docs/CHECKPOINTS.md` for exact Git commands. The engineer never stages, commits, pushes, amends or rewrites history.
+- Per your latest instruction, stop after meaningful milestones for owner review/commits/manual verification. C1 is the current checkpoint; see `docs/CHECKPOINTS.md` for exact Git commands. The engineer never stages, commits, pushes, amends or rewrites history.
 - Please confirm submission deadline and available camera/monitor/consenting-subject collection time so the experiment schedule can be realistic. No answer is assumed.
-- C0 optional manual check: after setting your own tokens and starting backend + kiosk, confirm `/ops` shows ready/provisional, `/kiosk` honestly says unimplemented, and no real access outcome is claimed. **Do not run real flashing trials until the C1 timing correction is verified.**
-- **Status:** checkpoint ready for review; real E1/E2 remain pending.
+- C1 software verification is complete; no real collection is required to accept this checkpoint. Review `C1_MEASUREMENT.md` and run your own commit commands in `CHECKPOINTS.md`. Prepare camera/display/consent for owner C3 after the probe tooling is ready. The current spike includes explicit preparation overhead and makes no two-second access claim.
+- **Status:** C1 ready for owner review/commit. C2/T1.6 next; real E1/E2 remain pending. Local working plan is `.local/plan.md`, deliberately ignored by Git.

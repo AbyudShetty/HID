@@ -169,7 +169,9 @@ def test_bundle_produced_by_the_kiosk_recorder_passes_the_real_server_validation
     assert bundle.label is not None and bundle.label.cls == "bona_fide"
     assert len(bundle.keyframes) == 2 and len(bundle.frames) >= 34
     assert [d.index for d in bundle.challenge.displayed] == [-1, 0, 1, 2]
-    assert bundle.challenge.challenge.total_ms == 1190
+    assert bundle.challenge.challenge.total_ms == 1220
+    from app.pipeline.measurement import validate_measurement
+    validate_measurement(bundle, ChallengeConfig())
     qc = quality_check(bundle)
     assert qc.covers_challenge and qc.crop_fps is not None and 27 < qc.crop_fps < 33
     assert not qc.warnings

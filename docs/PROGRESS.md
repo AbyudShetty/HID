@@ -18,7 +18,7 @@
 
 ## Current milestone / task
 
-M0 → M1. C0 takeover review and v1.2 architecture draft ready for owner checkpoint; G0/G1 remain unapproved. See `REPOSITORY_REVIEW.md`, `plan.md` §26 and `CHECKPOINTS.md`. No feature implementation during the review.
+M1: **owner C1 measurement repair complete; stop for owner review/commit**. Next: C2 / T1.6 features. Architecture/dependencies approved by owner; E1/E2/G1 remain unperformed/unapproved. Working plan updated in owner-ignored `.local/plan.md`. See `C1_MEASUREMENT.md` and `CHECKPOINTS.md`.
 
 ## In progress
 
@@ -104,3 +104,13 @@ M10 Demo
 - Corrected H-04's unsupported claim that E1 probes/report already existed. E1/E2 have not run; AWS sandbox/network and runtime model-latency evidence remain absent. `RESULTS.md` remains empty of accuracy claims.
 - Owner requested stops for commits/manual verification: C0 is the next stop. Next recommended implementation is C1 (measurement foundations and T1.6), followed by tested E1 tooling and physical verification. Use the exact commands/checklist in `CHECKPOINTS.md`; no Git writes performed.
 - Final checkpoint checks: source-snapshot comparison confirms all production/test/model/dependency files unchanged; only seven existing documentation files changed and two review/checkpoint documents added. Explicit local Markdown links and code fences validate; nothing is staged; secret/data/model/venv ignore rules checked. Stopped only the Docker backend created by this review (exit 0), leaving the tested image available.
+
+### 2026-11-14 — Owner C1 measurement repair
+- Start: clean working tree on owner commit `63668f9`, remote correct. The plan and original poster are now owner-private in ignored `.local/`; updated the plan there without moving/staging it. `docs/reference/` and both surprise photographs are still absent.
+- Owner approved ADR-001–004, ADR-005 amendment, a lightweight independent local runtime using the shared Python engine, signed policies, SQLite cache/outbox, encrypted limited templates, strict 15-minute freshness conjunction and crypto/time-zone dependencies when needed. ADR statuses and the owner's C1–C6 sequence are recorded; no new library installed.
+- Original renderer regression reproduced red (four transitions in 984 ms) then repaired. Nominal generation now reserves 80 ms inside the unchanged 1300 ms actual cap. Shared page history guards preparation entry/colors/final neutral/UI release. Hold durations from actual style application; no catch-up; stalls/interruption invalidate and restore safely. Preparation is logged separately, not excluded from any future official access-latency claim.
+- V2 measurement traces and per-frame sensor/callback sources added. Recorder filters invalid/pre-lock/duplicate/future timestamps and refuses insufficient neutral keyframes. Server checks complete timing/rate/alignment while preserving exact-issued challenge and single use. Streaming body cap and rejection of client-written result/timing metadata added. Legacy fixture retained and current TS↔Python producer fixture migrated explicitly.
+- Final tests: **136 fast backend**, **14 model**, **1 measurement-upload integration**, **47 frontend unit** (2 live skipped normally), **2 separate live TS↔final Docker tests** passed. Ruff, TS/Vite build, Compose config, Docker build/health/eight model hashes, and Git whitespace checks passed. Initial lint failures were corrected; no tests removed/weakened to pass.
+- Browser evidence: initial simulated-camera run **9/10 accepted**, one Vite→isolated-Docker `ETIMEDOUT` on challenge request (no backend request). Repeat **10/10**; final application-completion-timestamp run **10/10**. A separate 1400 ms main-thread stall safely aborted with no upload. All 29 accepted traces revalidated server-side, each with two neutral keyframes. Capture 1208.4–1236.0 ms; request-to-idle 2528.7–2586.3 ms across iterations. **No physical liveness/identity/2 s access evidence**. First failure retained in the report.
+- Published metadata-only evidence: `experiments/C1_measurement/browser_checks.json`; full explanation/limitations: `docs/C1_MEASUREMENT.md`. No real biometric dataset, raw camera material, weights or credentials included. The pre-existing owner Docker stack was untouched; review used an isolated container/port and temporary tokens.
+- Stop at C1. C2/T1.6 and E1/E2 software/physical work are not marked done. Human follow-up: owner review/commit; provide surprise photographs and timing/rig/consenting-subject availability. No Git writes performed.

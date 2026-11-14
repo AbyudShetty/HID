@@ -23,6 +23,21 @@ export interface Challenge {
   total_ms: number;
 }
 
+// Experiment bundle v2. Every time is relative to measurement start, including negative preparation.
+// This measurement origin must not replace the official access-decision t_lock metric.
+export interface IlluminationTransition {
+  state: "challenge" | "idle";
+  rgb: RGB;
+  t_display: number;
+}
+export interface MeasurementTiming {
+  version: 2;
+  preparation_ms: number;
+  capture_end_ms: number;
+  idle_at_ms: number;
+  transitions: IlluminationTransition[];
+}
+
 // --- collection label (§8.6) -------------------------------------------------------------------
 export type PaiFamily = "none" | "print" | "screen_photo" | "video_replay" | "mask";
 export type CaptureProcedure = "standard" | "on_the_spot_phone" | "auto_repeat_rig" | "redteam";

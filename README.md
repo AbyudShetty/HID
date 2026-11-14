@@ -2,11 +2,11 @@
 
 A prototype targeting an access decision **within 2 seconds**, combining physical liveness (screen-light "Chroma-Challenge" + passive texture), identity and campus authorization, with safe offline behavior. Intended outcomes: **Allow / Request Additional Verification / Deny**. Built for the HID Hackathon 2026; AWS deployment remains planned and permission-dependent.
 
-**`plan.md` is the single source of truth** (architecture, milestones, gates, anti-fabrication rules). Progress lives in `docs/PROGRESS.md`; decisions in `docs/DECISIONS.md`; measurements in `docs/EXPERIMENTS.md`; gate reports in `docs/GATES.md`.
+The owner's working plan is `.local/plan.md` (private/ignored in the current layout). Public implementation progress lives in `docs/PROGRESS.md`; approved decisions in `docs/DECISIONS.md`; measurements in `docs/EXPERIMENTS.md`; gate reports in `docs/GATES.md`.
 
 > Status: Milestones M0–M1 (bootstrap + risk experiments) in progress. The screen-light approach is **unproven until experiment E2 passes** (see `docs/EXPERIMENTS.md`). No accuracy numbers are claimed anywhere in this repository without provenance.
 
-Takeover checkpoint: [verified repository review](docs/REPOSITORY_REVIEW.md), [architecture and execution plan](plan.md#26-campus-access-and-safe-offline-operation--v12-review-draft), [owner checkpoints and Git commands](docs/CHECKPOINTS.md). Capture/vision tooling is implemented; the actual access-decision pipeline and campus/offline features are not yet implemented. Plan §26 is a review draft, not an approval or a performance claim. Real illumination trials wait for the recorded renderer-timing defect to be fixed.
+Current checkpoint: [C1 measurement repair](docs/C1_MEASUREMENT.md), [approved architecture decisions](docs/DECISIONS.md), [owner checkpoints and Git commands](docs/CHECKPOINTS.md). The renderer timing defect is repaired with regression and simulated-camera browser evidence. Chroma features, actual access decisions and campus/offline features remain to implement. E1/E2 remain unperformed; architecture approval is not empirical validation.
 
 ## Quick start (Windows dev machine)
 

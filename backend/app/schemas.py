@@ -467,15 +467,31 @@ class DisplayedSegment(Strict):
     t_display: float
 
 
+class IlluminationTransition(Strict):
+    state: Literal["challenge", "idle"]
+    rgb: RGB
+    t_display: float = Field(allow_inf_nan=False)
+
+
+class MeasurementTiming(Strict):
+    version: Literal[2]
+    preparation_ms: float = Field(ge=1000, allow_inf_nan=False)
+    capture_end_ms: float = Field(gt=0, le=1300, allow_inf_nan=False)
+    idle_at_ms: float = Field(gt=0, allow_inf_nan=False)
+    transitions: list[IlluminationTransition] = Field(min_length=6, max_length=6)
+
+
 class ChallengeRecord(Strict):
     challenge: Challenge
     displayed: list[DisplayedSegment] = Field(default_factory=list)
+    timing: MeasurementTiming | None = None  # legacy bundles are readable, not accepted as new measurements
 
 
 class FrameRecord(Strict):
     seq: int
     t_capture: float
     t_callback: float | None = None  # rVFC callback time, when different from t_capture (diagnostics for E1/E2)
+    capture_time_source: Literal["captureTime", "now"] | None = None
     crop_box: BoxXYWH
     frame_size: tuple[int, int]
     client_face_box: BoxXYWH | None = None
@@ -485,6 +501,8 @@ class FrameRecord(Strict):
 class KeyframeRecord(Strict):
     seq: int
     t_capture: float
+    t_callback: float | None = None
+    capture_time_source: Literal["captureTime", "now"] | None = None
     frame_size: tuple[int, int] | None = None
     file: str  # keyframes/k0.jpg
 

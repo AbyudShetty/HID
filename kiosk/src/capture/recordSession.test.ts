@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
 import samples from "../../../backend/tests/fixtures/protocol_samples.json";
-import { runChallenge } from "../challenge/renderer";
+import { runChallenge, TransitionGuard, type RenderDeps } from "../challenge/renderer";
 import { packBundle } from "../net/bundle";
 import type { Challenge, CollectLabel, RGB } from "../types/protocol";
 import { recordSession, type RecordParams } from "./recordSession";
 import type { FrameSource, GrabRequest, Grabbed } from "./types";
 
-const challenge = samples.server["session.ready"].challenge as unknown as Challenge; // neutral 200 + 3x330 = 1190 ms
+const legacyChallenge = samples.server["session.ready"].challenge as unknown as Challenge;
+const challenge: Challenge = { ...legacyChallenge, segments: legacyChallenge.segments.map((s) => ({ ...s, duration_ms: 340 })), total_ms: 1220 };
 const label = samples.records.collect_label_bona_fide as unknown as CollectLabel;
 const dec = new TextDecoder();
 
 /** One shared simulated clock: render frames at 60 Hz, camera frames at 30 Hz. */
-function simulate(opts: { cameraFps?: number; t0?: number } = {}) {
+function simulate(opts: { cameraFps?: number; t0?: number; captureLagMs?: number; interrupted?: boolean } = {}) {
   const cameraFps = opts.cameraFps ?? 30;
   const t0 = opts.t0 ?? 10_000;
   let now = t0;
@@ -36,20 +37,23 @@ function simulate(opts: { cameraFps?: number; t0?: number } = {}) {
   };
   const fake = (tag: number) => Promise.resolve(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, tag & 255, (tag >> 8) & 255]));
 
-  const render = (hooks: { onDisplayed?: (d: { index: number; t_display: number }) => void }) =>
+  const render = (hooks: Pick<RenderDeps, "onDisplayed" | "onStarted" | "onCaptureEnd">) =>
     runChallenge(challenge, {
+      now: () => now,
+      guard: new TransitionGuard(),
+      interrupted: () => !!opts.interrupted,
       raf: (cb) => {
         rafCb = cb;
         return 1;
       },
       setColor: (rgb) => painted.push({ rgb, ts: now }),
-      onDisplayed: hooks.onDisplayed,
+      ...hooks,
     });
 
   /** advance 1 ms at a time; deliver render/camera frames on their own cadence */
-  const run = async (promise: Promise<unknown>, maxMs = 3000) => {
+  const run = async (promise: Promise<unknown>, maxMs = 6000) => {
     let done = false;
-    promise.then(() => (done = true));
+    promise.then(() => (done = true), () => (done = true));
     const camPeriod = 1000 / cameraFps;
     let nextRender = t0;
     let nextCam = t0 + 5; // camera phase offset
@@ -64,7 +68,7 @@ function simulate(opts: { cameraFps?: number; t0?: number } = {}) {
       if (running && now >= nextCam && plan && onFrame) {
         const req = plan(now);
         if (req) {
-          const g: Grabbed = { t: now, tCallback: now, source: "now", width: 1280, height: 720 };
+          const g: Grabbed = { t: now - (opts.captureLagMs ?? 0), tCallback: now, source: opts.captureLagMs ? "captureTime" : "now", width: 1280, height: 720 };
           if (req.crop) g.crop = fake(n++);
           if (req.full) g.full = fake(1000 + n++);
           onFrame(g);
@@ -73,7 +77,7 @@ function simulate(opts: { cameraFps?: number; t0?: number } = {}) {
       }
       await Promise.resolve();
     }
-    await promise;
+    if (!done) throw new Error("simulation did not finish");
   };
   return { source, render, run, getNow: () => now, painted };
 }
@@ -117,15 +121,18 @@ describe("recordSession", () => {
 
     const ch = JSON.parse(dec.decode(byName.get("challenge.json")!));
     expect(ch.displayed.map((d: { index: number }) => d.index)).toEqual([-1, 0, 1, 2]);
-    expect(ch.displayed[0].t_display).toBeGreaterThanOrEqual(0);
-    expect(ch.displayed[0].t_display).toBeLessThan(20); // within about a frame of t_lock
+    expect(ch.displayed[0].t_display).toBeLessThanOrEqual(-1000); // real neutral entry, before measurement lock
+    expect(ch.timing.preparation_ms).toBeGreaterThanOrEqual(1000);
+    expect(ch.timing.capture_end_ms).toBeLessThanOrEqual(1300);
+    expect(ch.timing.transitions.at(-1).state).toBe("idle");
 
     // keyframes are taken only after the neutral colour settled and before the first colour
     const kf = dec.decode(byName.get("keyframes.jsonl")!).split("\n").map((l) => JSON.parse(l));
     const neutralT = ch.displayed[0].t_display;
     for (const k of kf) {
       expect(k.t_capture).toBeGreaterThanOrEqual(neutralT + 60);
-      expect(k.t_capture).toBeLessThan(neutralT + 200);
+      expect(k.t_capture).toBeGreaterThanOrEqual(0);
+      expect(k.t_capture).toBeLessThan(ch.displayed[1].t_display);
     }
 
     // crops: fixed box for the whole session, strictly increasing capture time, first at/after t_lock
@@ -148,8 +155,39 @@ describe("recordSession", () => {
     const p = recordSession(baseParams(), { source: sim.source, render: sim.render, now: sim.getNow, isoNow: () => "x" });
     await sim.run(p);
     const { stats } = await p;
-    expect(stats.spanMs).toBeLessThan(challenge.total_ms + 40);
+    expect(stats.spanMs).toBeLessThanOrEqual(1300);
     expect(stats.spanMs).toBeGreaterThan(challenge.total_ms - 80);
+  });
+
+  it("filters pre-lock sensor frames and keeps both keyframes inside the actual neutral interval", async () => {
+    const sim = simulate({ captureLagMs: 80 });
+    const p = recordSession(baseParams(), { source: sim.source, render: sim.render, now: sim.getNow, isoNow: () => "2026-11-14T10:00:00Z" });
+    await sim.run(p); const { entries, stats } = await p;
+    const e = new Map(entries);
+    const ch = JSON.parse(dec.decode(e.get("challenge.json")));
+    const kf = dec.decode(e.get("keyframes.jsonl")).split("\n").map((s) => JSON.parse(s));
+    expect(stats.rejectedFrames).toBeGreaterThan(0);
+    expect(kf).toHaveLength(2);
+    for (const k of kf) {
+      expect(k.t_capture).toBeGreaterThanOrEqual(0);
+      expect(k.t_capture).toBeLessThan(ch.displayed[1].t_display);
+      expect(k.t_callback - k.t_capture).toBe(80);
+      expect(k.capture_time_source).toBe("captureTime");
+    }
+  });
+
+  it("refuses an interrupted measurement instead of producing an uploadable bundle", async () => {
+    const sim = simulate({ interrupted: true });
+    const p = recordSession(baseParams(), { source: sim.source, render: sim.render, now: sim.getNow, isoNow: () => "x" });
+    const check = expect(p).rejects.toThrow(/invalid measurement: INTERRUPTED/);
+    await sim.run(p); await check;
+  });
+
+  it("refuses a camera with insufficient neutral keyframes rather than using coloured frames", async () => {
+    const sim = simulate({ captureLagMs: 250 });
+    const p = recordSession(baseParams(), { source: sim.source, render: sim.render, now: sim.getNow, isoNow: () => "x" });
+    const check = expect(p).rejects.toThrow(/insufficient neutral keyframes/);
+    await sim.run(p); await check;
   });
 
   it("matches the committed cross-language bundle fixture that Python validates with the real build_bundle", async () => {

@@ -163,7 +163,6 @@ export function SpikePage() {
         faceBox = largestBox(boxes);
       }
       const crop = computeCropBox(faceBox ?? centerFaceBox(frame), frame, ch.capture_config.context_scale);
-      overlay.style.display = "block";
       const rec = await recordSession(
         {
           challenge: ch.challenge,
@@ -190,6 +189,9 @@ export function SpikePage() {
           source: src,
           render: renderWith(ch.challenge, {
             raf: (cb) => requestAnimationFrame(cb),
+            now: () => performance.now(),
+            interrupted: () => document.hidden,
+            setActive: (active) => { overlay.style.display = active ? "block" : "none"; },
             setColor: (rgb) => {
               overlay.style.background = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
             },
@@ -198,13 +200,12 @@ export function SpikePage() {
           isoNow: () => new Date().toISOString(),
         },
       );
-      overlay.style.display = "none";
       const result = await postBundle(packBundle(rec.entries));
       const stats = { nCrops: rec.stats.nCrops, nKeyframes: rec.stats.nKeyframes, cropFps: rec.stats.cropFps, skipped: rec.stats.skippedSegments, captureTimeSource: rec.stats.captureTimeSource };
       setLog((l) => [{ at: startedAt, session_id: sessionId, summary: `${built.label.class}${built.label.pai_species !== "none" ? ` / ${built.label.pai_species}` : ""}`, result, stats }, ...l]);
-      setMessage(result.qc.warnings.length ? `uploaded with warnings: ${result.qc.warnings.join("; ")}` : "uploaded OK");
+      const timing = `prep ${Math.round(rec.stats.preparationMs)} ms; capture ${Math.round(rec.stats.captureMs)} ms; request→idle ${Math.round(rec.stats.requestToIdleMs)} ms`;
+      setMessage(result.qc.warnings.length ? `uploaded with warnings: ${result.qc.warnings.join("; ")}; ${timing}` : `uploaded OK; ${timing}`);
     } catch (e) {
-      overlay.style.display = "none";
       const msg = e instanceof ApiError || e instanceof Error ? e.message : String(e);
       setLog((l) => [{ at: startedAt, session_id: sessionId, summary: "FAILED", error: msg }, ...l]);
       setMessage(`failed: ${msg}`);

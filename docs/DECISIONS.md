@@ -17,7 +17,7 @@ Review convention (2026-11-14): **Accepted (engineering review)** records the de
 ---
 
 ## ADR-001: Bundle upload as one length-prefixed binary body (no multipart)
-- Date: 2026-11-14 · Status: **Accepted (engineering review, Codex, 2026-11-14)**; format accepted, receiver hardening outstanding
+- Date: 2026-11-14 · Status: **Approved by owner, 2026-11-14**; format accepted, remaining image-resource hardening tracked separately
 - Plan reference: §8.2 (`POST /collect/bundles` "multipart bundle"), §7.3 (allowed dependencies), rule 2.3.8
 - Context: FastAPI/Starlette can only parse `multipart/form-data` when `python-multipart` is installed. That package is **not** on the §7.3 allowed list. The plan's intent for this endpoint is only "upload a session bundle" for the M1 spike path and collect mode.
 - Options: (A) add `python-multipart` (dependency ADR, small, MIT); (B) one binary body `application/x-hid-bundle` made of `[u32 name_len][name][u32 data_len][data]` entries, buildable in the browser with plain `Uint8Array`s and parseable with `struct` on the server; (C) zip in the browser (needs a zip library, so another dependency).
@@ -27,7 +27,7 @@ Review convention (2026-11-14): **Accepted (engineering review)** records the de
 - Required hardening: cap the streamed request before allocation even without Content-Length; enforce crop/keyframe and decoded-pixel limits; reject client `result.json`/`server_timing.json`; document version negotiation and consistent 400/409/413/415 behavior. Current 48 MiB body / 8 MiB entry limits are parser limits, not a complete image resource defense. See review REV-02. Acceptance of the encoding is not security approval of an unrestricted upload endpoint.
 
 ## ADR-002: Task runner and virtual environments on the Windows dev machine
-- Date: 2026-11-14 · Status: **Accepted with setup amendments (engineering review, Codex, 2026-11-14)**
+- Date: 2026-11-14 · Status: **Approved by owner, 2026-11-14**; setup follow-ups remain
 - Plan reference: §7.1–7.2, §18.1
 - Context: the dev laptop has no `make` and Python 3.10.0, and the camera scripts need GUI OpenCV (`opencv-python`) while the backend and serving image use `opencv-python-headless` (the two cannot share one environment).
 - Decision: keep the `Makefile` (for Linux/CI/EC2) and add `tasks.py` with identical targets. `.venv` = backend + tooling (headless OpenCV); `.venv-host` = camera/GUI scripts (`tools/requirements-host.txt`). No new third-party dependencies.
@@ -36,7 +36,7 @@ Review convention (2026-11-14): **Accepted (engineering review)** records the de
 - Amendments before claiming reproducible setup: add the referenced but absent host/tooling requirements manifests, record export-only dependencies, lock transitive dependencies, document explicit interpreter/working-directory use, and make `tasks.py all` run/report every requested check despite earlier failures. Do not install GUI OpenCV into the serving venv/image. `bench` remains a future target until its script exists. No packages are changed by this review.
 
 ## ADR-003: Type-definition packages for the kiosk
-- Date: 2026-11-14 · Status: **Accepted (engineering review, Codex, 2026-11-14)**
+- Date: 2026-11-14 · Status: **Approved by owner, 2026-11-14**
 - Plan reference: §7.3 (frontend dependency list), rule 2.3.8
 - Context: React + TypeScript cannot type-check without `@types/react` and `@types/react-dom`. They are type-only dev dependencies, not runtime code, and are not named in §7.3 (which lists `react`, `react-dom`, `typescript`, …).
 - Decision: add `@types/react@18.3.31` and `@types/react-dom@18.3.7` (dev only). Nothing else outside §7.3 was added to the kiosk. `@types/node` was deliberately **not** added: tests avoid `node:` imports.
@@ -44,14 +44,14 @@ Review convention (2026-11-14): **Accepted (engineering review)** records the de
 - Review: exact pins are dev-only in `kiosk/package.json` and lockfile; TypeScript/Vite build and 37 unit tests pass. Alternatives are hand-maintained React declarations or disabling useful type checks; neither improves maintainability. These packages provide compile-time declarations, not runtime authentication/security code.
 
 ## ADR-004: Test-tooling version pins on Python 3.10.0
-- Date: 2026-11-14 · Status: **Accepted (engineering review, Codex, 2026-11-14)**
+- Date: 2026-11-14 · Status: **Approved by owner, 2026-11-14**
 - Context: the host interpreter is CPython 3.10.0 (an early patch release). pytest 9.2.0 fails there with `AttributeError: 'NodeId' object has no attribute '_str_cache'` (a `dataclass(slots=True)` field with `init=False` is not initialised on that release).
 - Decision: pin `pytest==8.4.2` (the line the machine already had) in `backend/pyproject.toml`. The Docker image (Python 3.11) does not install dev extras, so serving is unaffected.
 - Consequences: upgrade Python to ≥ 3.10.12 or 3.11 if newer pytest features are wanted.
 - Review evidence: host is Python 3.10.0; installed pytest is exactly 8.4.2; 102 fast and 14 model tests pass. Claude session contains the original pytest 9 failure and downgrade. The failure was not deliberately reintroduced. A later interpreter/pytest upgrade needs its own compatibility run; the original suggested newer Python versions are not claimed as newly tested fixes. Alternative now: upgrade the interpreter and all tooling, increasing takeover risk without a product benefit. Keep the documented pin and CI/container separation.
 
 ## ADR-005: Challenge distinctness rule and segment timing (replaces two numbers in plan §9.2)
-- Date: 2026-11-14 · Status: **Amended / Proposed** after engineering review; color-distance rationale accepted, displayed-timing enforcement pending implementation and review; G-03 remains gated
+- Date: 2026-11-14 · Status: **Approved amendment by owner, 2026-11-14; implemented at C1**. Physical response and final G-03 selection still require E1/E2/G1.
 - Plan reference: §9.2 hard constraints 1 and 3, defaults "N = 200 ms, K = 3, D = 330 ms, J = 40 ms", F-04
 - Context (measured, not assumed — see the script output in docs/EXPERIMENTS.md E2-0):
   1. Constraint 3 says consecutive segments differ by ≥ 100 (of 255) in at least two channels, including neutral→first. Against the plan's own neutral (205,205,205) **every** colour of its example palette fails: the two-channel count is 0 or 1 for all six colours (e.g. (80,120,255) differs by 125/85/50). Only colours with two channels ≤ 105 could pass, which excludes yellow, cyan, magenta and the near-isoluminant P2 variant entirely (a P2 colour must have luminance ≈ 0.61, but two channels ≤ 105 cap blue at ≈ 0.18 and leave only a green).
@@ -64,37 +64,44 @@ Review convention (2026-11-14): **Accepted (engineering review)** records the de
 - Amendment: track all actual visible state changes (neutral entry, each color, return/overlay exit, subsequent attempts); do not compress/catch up a sequence after a stall. Gate transitions against rolling history, hold a safe state on interruption and report invalid timing/unavailable evidence. Record the actual final transition, add browser-stall/abort/cooldown regression tests, verify final return contrast, and check consecutive sessions. Maintain the ≤1.3 s usable measurement target; an aborted run is not a valid challenge. If safety recovery exceeds that target, record failure rather than accelerate flashes. Planned generator checks remain useful but insufficient.
 - Alternatives: redesign the palette to meet the old literal rule (still leaves runtime timing defect), or rely on nominal segment lengths (rejected by the reproduced trace). Final palette/camera/display selection remains a real E1/E2/G1 decision. Do not describe the flash constraint as a clinical safety certification.
 
-## ADR-006: One codebase with a local edge gateway and shared Python verification
-- Date: 2026-11-14 · Status: **Proposed — owner review requested, not implemented**
+### C1 implementation evidence for ADR-005 (2026-11-14)
+- Nominal defaults remain neutral 200 ms and three 340±30 ms segments, with an **80 ms render reserve**: generator accepts nominal totals 1,200–1,220 ms. Actual measurement cap remains **1,300 ms**. No E2 AUC threshold changed.
+- A page-lifetime guard counts controlled neutral entry, every color, final neutral and UI exit over half-open `[t,t+1000)` windows. Entry is followed by at least 1,000 ms neutral preparation before measurement; every issued duration is held from its actual DOM application. No catch-up. Overrun/visibility interruption returns an invalid measurement and restores at the guarded rate.
+- V2 bundles include the complete transition trace, preparation/capture/idle timings, sensor/callback time source per frame. Server rejects compressed/missing/forged traces and non-neutral keyframes, retaining exact issued-challenge and single-use checks. Legacy bundles remain readable for provenance but cannot be newly uploaded as valid measurements.
+- Preparation and request-to-idle overhead are explicit. Measurement-start zero is not a new access-decision timing definition: future access timing must include all work incurred after the original face-lock `t_lock`. Prepare the neutral surface before access face lock if latency permits; do not hide preparation to claim <2 seconds.
+- Application timestamps are rAF-driven DOM changes, not physical display scan-out/exposure measurements. E1 still must verify hardware response; this is not a clinical photosensitivity certification. See `docs/C1_MEASUREMENT.md` for tests, first-run failure and limits.
+
+## ADR-006: Independent local kiosk runtime and central service, shared Python verification
+- Date: 2026-11-14 · Status: **Approved by owner, 2026-11-14 — implementation scheduled, not yet built**
 - Plan reference: §26.2/26.6; extends F-04/F-05/F-14 and replaces the manual-only outage story of §20.3.
 - Context: a cloud-only browser loses decision capability on disconnect. Reusing the Python container locally preserves model/preprocessing/calibration parity and allows local audit durability without browser biometric storage.
 - Options: (A) duplicate inference and template storage in browser; (B) manual URL/container switch; (C) persistent browser→edge connection with online upstream forwarding and the same local Python pipeline when disconnected.
-- Recommendation: **C**. Separate central/edge roles, existing protocol/pipeline, local static kiosk assets. One authority per attempt; a central attempt interrupted by outage ends RV and a fresh local challenge is required. Never reuse a nonce or accept a late ALLOW after terminal timeout.
+- Decision: reuse **C** as a lightweight single-kiosk runtime plus an independent central service, with local static kiosk assets. The owner explicitly ruled out an elaborate gateway, additional microservices and Kubernetes. Local inference must remain available if the central process itself fails, not only if its network link fails. One authority per attempt; a central attempt interrupted by outage ends RV and a fresh local challenge is required. Never reuse a nonce or accept a late ALLOW after terminal timeout.
 - Consequences: additional locally managed service and measured forwarding hop; local service is mandatory for SC2 demo acceptance. Local control/credential protection needs hardening. A disconnected reboot defaults to no ALLOW. Cloud remains the normal online inference authority and AWS demonstration; no models/frameworks are replaced.
-- Evidence: current Python modules, worker capture/transport and Docker fallback offer reusable boundaries; no outage inference or latency measurement exists yet. Acceptance: §26.10 C6/C7/C8.
+- Evidence: current Python modules, worker capture/transport and Docker fallback offer reusable boundaries; no outage inference or latency measurement exists yet. Acceptance: owner C5/C6. Local runtime is independent of the central process.
 
 ## ADR-007: Campus authorization and availability guard every final access decision
-- Date: 2026-11-14 · Status: **Proposed — owner review requested, not implemented**
+- Date: 2026-11-14 · Status: **Approved by owner, 2026-11-14 — implementation scheduled, not yet built**
 - Plan reference: §26.3–26.5; amends the direct identity→ALLOW rule in §11.4 and factor/manual resolution in §12.4; preserves F-01/F-02/F-03/F-15 intent.
 - Options: bolt a schedule check onto UI results (reject: bypassable and misses factors), fuse schedule into liveness confidence (reject: conflates evidence), or add separate typed pure authorization and availability guards to the shared decision engine.
-- Recommendation: separate pure evaluator, explicit weekly/dated schedule, scoped grants and immutable revisions; unknown/missing policy cannot permit. Apply trusted established denial vetoes before uncertainty and retain them through step-up. Successful factors rerun current authorization and execution guards.
+- Decision: separate pure evaluator, explicit weekly/dated schedule, scoped grants and immutable revisions; unknown/missing policy cannot permit. Apply trusted established denial vetoes before uncertainty and retain them through step-up. Successful factors rerun current authorization and execution guards.
 - Consequences: extend Pydantic/TS contracts together, keep three wire outcomes and four official flow stages. New contextual system FAR/FRR need a schema-versioned companion report: ineligible schedule attempts are unauthorized; intentional closure denies are not biometric false rejections. Existing biometric definitions and E2 thresholds are unchanged pending explicit review of any metric extension.
 - Security: bind campus/location/kiosk to server-owned device identity, not client fields; closure/revocation and spoof cannot be manually overridden. Data is explicitly demo data. Time tests include expiry equality, DST and final-decision policy changes.
-- Acceptance: §26 decision matrix and C5/C6 test suites, with independent identity/liveness evidence.
+- Acceptance: §26 decision matrix and owner C4/C6 test suites, with independent identity/liveness evidence.
 
 ## ADR-008: Restricted offline grants, signed snapshots and a durable metadata-only outbox
-- Date: 2026-11-14 · Status: **Proposed — owner risk decision required; offline ALLOW disabled by default**
+- Date: 2026-11-14 · Status: **Approved by owner, 2026-11-14 — restricted grants only after every guard passes; not yet implemented**
 - Plan reference: §26.7/26.8; official offline requirements as transcribed by the owner, photographs pending.
 - Options: cache last online ALLOW (reject: replay/stale authorization), unconditional deny/step-up on outage (safe default but limited autonomy), or a locally verified new attempt with signed scoped policies, encrypted eligible identities, trustworthy time, bounded freshness and durable audit.
-- Recommendation: implement safe-default path first, then permit the restricted path only after validation and owner approval. Proposed maximum revocation staleness: **15 minutes**, bounded by earlier policy/identity/grant expiry. Disconnected restart cannot ALLOW without re-established trusted time. No offline grant after central authentication/revocation failure.
-- Consequences: instant offline revocation cannot be guaranteed. Owner must accept the bounded exposure or retain no offline grants. Exact criteria and protections are §26.7. Offline PIN step-up uses an encrypted salted scrypt verifier for an already locally matched identity, explicit policy permission and persistent lockouts; it cannot bypass a missing liveness pass or expired policy.
+- Recommendation: implement safe-default path first, then permit restricted local grants only after every approved guard is implemented and validated. Strict maximum revocation-data staleness: **15 minutes**, bounded by earlier policy/identity/grant expiry. Disconnected restart cannot ALLOW without re-established trusted time. No offline grant after central authentication/revocation failure.
+- Consequences: instant offline revocation cannot be guaranteed. The owner accepted this upper bound, which never substitutes for the other guards. Only a successful verified policy/identity/revocation refresh renews freshness; audit acknowledgements and heartbeats do not. At age ≥900 seconds, refuse ALLOW. Exact criteria and protections are §26.7. Offline PIN step-up uses an encrypted salted scrypt verifier for an already locally matched identity, explicit policy permission and persistent lockouts; it cannot bypass a missing liveness pass or expired policy.
 - Audit: SQLite atomic event/outbox insert before ALLOW; no raw images/recordings/templates/feature arrays/factor secrets in the queue. At-least-once delivery, authenticated per-event ack, central idempotency/conflict checks, partial retry and quarantine, historical policy context immutable. Updated central policy produces a separate reconciliation annotation.
 - Threat limits: host-admin compromise can defeat software-only key/time/rollback protections. Keys outside the database plus OS/disk access controls are a prototype boundary, not device attestation. P0 reboot-offline behavior remains fail-safe.
-- Acceptance: §26.11 cache/transition/queue integration tests and real hardware local verification; C7 before C8.
+- Acceptance: §26.11 cache/transition/queue integration tests and real hardware local verification; Fail-closed operation before enabling restricted grants within owner C5; full integration at C6.
 
 ## ADR-009: Cryptographic and portable time-zone dependencies
-- Date: 2026-11-14 · Status: **Proposed — owner dependency approval requested; no install performed**
-- Plan reference: §7.3 dependency policy; §26.4/26.7. Implements ADR-008 only if approved.
+- Date: 2026-11-14 · Status: **Approved by owner, 2026-11-14 — add when needed; no install at C1**
+- Plan reference: §7.3 dependency policy; §26.4/26.7. Needed when implementing approved ADR-008; no new dependency is needed for C1.
 - Request: `cryptography==50.0.2` (Apache-2.0 OR BSD-3-Clause) for Ed25519 verification/signing and AES-GCM authenticated encryption; `tzdata==2026.6` (Apache-2.0) as an explicit direct time-zone data dependency.
 - Observed package metadata (PyPI, 2026-11-14): cryptography requires Python ≥3.9 excluding 3.9.0/3.9.1; compatible `cp39-abi3-win_amd64` wheel 3,854,095 bytes. tzdata universal wheel 348,210 bytes. These sizes exclude crypto transitive dependencies and installed expansion; inventory and pin the complete closure before adding the packages.
 - Alternatives: stdlib `hmac` shares policy-forging authority with the edge and does not provide asymmetric verification or template encryption; custom cryptography is rejected; online-only KMS cannot decrypt during an outage; fixed UTC offset fails portable IANA/DST requirements. Keep stdlib SQLite/datetime/retry logic, with no scheduler/queue framework.

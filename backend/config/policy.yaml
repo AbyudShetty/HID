@@ -58,3 +58,4 @@ challenge:
   max_transitions_per_s: 3
   min_delta_linear: 0.30
   prefetch_ttl_s: 30
+  render_reserve_ms: 80  # nominal <=1220 ms; actual capture cap remains 1300 ms (ADR-005 C1)

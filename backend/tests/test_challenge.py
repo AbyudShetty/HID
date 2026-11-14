@@ -115,6 +115,7 @@ def test_generator_always_produces_valid_challenges_over_10000_seeds(palette_id)
         c = generate(cfg, rng=random.Random(seed))
         assert validate(c, cfg) == [], (seed, c)
         assert c.total_ms <= cfg.total_cap_ms
+        assert c.total_ms <= cfg.total_cap_ms - cfg.render_reserve_ms
         totals.add(c.total_ms)
     assert len(totals) > 20  # durations really are jittered
 
@@ -138,3 +139,19 @@ def test_from_policy_reads_the_checked_in_defaults(policy):
     cfg = ChallengeConfig.from_policy(policy.setting_section("challenge"))
     assert cfg == CFG
     assert cfg.neutral_ms == 200 and cfg.segments == 3 and cfg.total_cap_ms == 1300
+    assert cfg.render_reserve_ms == 80
+
+
+@pytest.mark.parametrize("change", [{"neutral_ms": 0}, {"segments": 4}, {"jitter_ms": -1},
+                                   {"total_cap_ms": 1400}, {"render_reserve_ms": -1},
+                                   {"max_transitions_per_s": 4}, {"min_delta_linear": 0.1},
+                                   {"segment_ms": 340.5}])
+def test_configuration_cannot_silently_weaken_the_measurement_contract(change):
+    with pytest.raises(ValueError):
+        replace(CFG, **change)
+
+
+def test_seed_reproduces_segments_but_never_reuses_the_secure_nonce():
+    a, b = generate(rng=random.Random(42)), generate(rng=random.Random(42))
+    assert a.segments == b.segments
+    assert a.nonce != b.nonce

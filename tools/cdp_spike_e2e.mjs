@@ -22,6 +22,7 @@ const CHROME = arg("chrome", "C:\\Program Files\\Google\\Chrome\\Application\\ch
 const PORT = Number(arg("port", "9333"));
 const PALETTES = (arg("palettes", "P1,P2")).split(",");
 const LOCK = arg("lock", "none");
+const STALL_MS = Number(arg("stall-ms", "0")); // negative-path timing test; never liveness data
 
 const profile = mkdtempSync(join(tmpdir(), "hid-cdp-"));
 const chromeArgs = [
@@ -132,14 +133,19 @@ for (let i = 0; i < N; i++) {
   await evaluate(`(() => { const sel = [...document.querySelectorAll('select')].find(s => [...s.options].some(o => o.text === 'server default'));
     const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; set.call(sel, ${JSON.stringify(palette)}); sel.dispatchEvent(new Event('change', { bubbles: true })); })()`);
   await evaluate(`document.querySelector('[data-testid=record]').click()`);
+  if (STALL_MS > 0) {
+    await waitFor(`(() => { const s = document.querySelector('[data-testid=overlay]').style;
+      return s.display === 'block' && s.background !== 'rgb(205, 205, 205)'; })()`, 15000, "first coloured segment");
+    await evaluate(`(() => { const until = performance.now() + ${STALL_MS}; while (performance.now() < until) {} })()`);
+  }
   await waitFor(`/^(uploaded|failed)/.test(document.querySelector('[data-testid=status-message]').textContent)`, 30000, `session ${i + 1}`);
   const msg = await evaluate(`document.querySelector('[data-testid=status-message]').textContent`);
   const row = await evaluate(`(() => { const r = document.querySelector('[data-testid=log] tbody tr'); return r ? [...r.children].map(c => c.textContent) : null })()`);
   results.push({ palette, msg, row });
   await sleep(300);
 }
-const failed = results.filter((r) => !r.msg.startsWith("uploaded")).length;
-console.log(JSON.stringify({ ok: failed === 0, detector, camStatus, n: N, failed, results, consoleMsgs }, null, 1));
+const failed = results.filter((r) => STALL_MS > 0 ? !r.msg.includes("invalid measurement: CAPTURE_OVERRUN") : !r.msg.startsWith("uploaded")).length;
+console.log(JSON.stringify({ ok: failed === 0, mode: STALL_MS > 0 ? "synthetic-stall-rejection" : "simulated-camera-capture", detector, camStatus, n: N, failed, results, consoleMsgs }, null, 1));
 ws.close();
 cleanup();
 process.exit(failed === 0 ? 0 : 1);

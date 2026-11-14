@@ -15,6 +15,7 @@ A challenge is a neutral reference segment followed by K colour segments. The ha
 Randomness: colours, jitter and the nonce come from ``secrets.SystemRandom`` / ``secrets.token_urlsafe`` (plan rule 2.3.3).
 A caller may inject another ``random.Random`` *only for tests* (to run the generator over thousands of seeds).
 """
+
 from __future__ import annotations
 
 import random
@@ -38,6 +39,35 @@ class ChallengeConfig:
     max_transitions_per_s: int = 3
     min_delta_linear: float = 0.30
     prefetch_ttl_s: int = 30
+    render_reserve_ms: int = (
+        80  # leave room for rAF quantization inside the unchanged 1300 ms actual cap
+    )
+
+    def __post_init__(self) -> None:
+        integers = (
+            self.neutral_ms,
+            self.segments,
+            self.segment_ms,
+            self.jitter_ms,
+            self.total_cap_ms,
+            self.prefetch_ttl_s,
+            self.render_reserve_ms,
+        )
+        if any(type(v) is not int for v in integers):
+            raise ValueError("challenge timing/count values must be integers")
+        if (
+            self.neutral_ms != 200
+            or self.segments != 3
+            or self.segment_ms <= self.jitter_ms
+            or self.jitter_ms < 0
+            or self.total_cap_ms > 1300
+            or self.render_reserve_ms < 0
+            or self.total_cap_ms - self.render_reserve_ms < 1200
+            or self.prefetch_ttl_s <= 0
+            or self.max_transitions_per_s != 3
+            or self.min_delta_linear != 0.30
+        ):
+            raise ValueError("challenge configuration violates the measurement/safety contract")
 
     @classmethod
     def from_policy(cls, settings: dict) -> ChallengeConfig:
@@ -69,10 +99,17 @@ def validate(challenge: Challenge, cfg: ChallengeConfig | None = None) -> list[s
         return [f"unknown palette {challenge.palette_id!r}"]
 
     states = [challenge.neutral, *challenge.segments]
+    if len(challenge.segments) != cfg.segments or challenge.neutral.duration_ms != cfg.neutral_ms:
+        problems.append("challenge must have the configured neutral duration and segment count")
     if any(s.duration_ms <= 0 for s in states):
         problems.append("every segment needs a positive duration")
     if challenge.total_ms > cfg.total_cap_ms:
         problems.append(f"total {challenge.total_ms} ms exceeds the cap {cfg.total_cap_ms} ms")
+    if any(
+        not cfg.segment_ms - cfg.jitter_ms <= s.duration_ms <= cfg.segment_ms + cfg.jitter_ms
+        for s in challenge.segments
+    ):
+        problems.append("segment duration is outside configured jitter bounds")
     if tuple(challenge.neutral.rgb) != palette.neutral:
         problems.append("neutral segment colour is not the palette neutral")
 
@@ -81,7 +118,9 @@ def validate(challenge: Challenge, cfg: ChallengeConfig | None = None) -> list[s
     for i, t0 in enumerate(times):
         in_window = sum(1 for t in times[i:] if t < t0 + WINDOW_MS)
         if in_window > cfg.max_transitions_per_s:
-            problems.append(f"{in_window} transitions within {WINDOW_MS} ms starting at {t0} ms (max {cfg.max_transitions_per_s})")
+            problems.append(
+                f"{in_window} transitions within {WINDOW_MS} ms starting at {t0} ms (max {cfg.max_transitions_per_s})"
+            )
             break
 
     for k, seg in enumerate(challenge.segments):
@@ -97,7 +136,15 @@ def validate(challenge: Challenge, cfg: ChallengeConfig | None = None) -> list[s
             problems.append(f"segment {k} repeats the previous colour {rgb}")
         # 3. distinct in measured light
         elif linear_distance(tuple(prev.rgb), rgb) < cfg.min_delta_linear:  # type: ignore[arg-type]
-            problems.append(f"segment {k} is too close to its predecessor in linear RGB (< {cfg.min_delta_linear})")
+            problems.append(
+                f"segment {k} is too close to its predecessor in linear RGB (< {cfg.min_delta_linear})"
+            )
+    if (
+        challenge.segments
+        and linear_distance(tuple(challenge.segments[-1].rgb), palette.neutral)
+        < cfg.min_delta_linear
+    ):
+        problems.append("final return to neutral is too close in linear RGB")
     return problems
 
 
@@ -109,7 +156,10 @@ def _build(palette: Palette, cfg: ChallengeConfig, rng: random.Random) -> Challe
         prev = rng.choice(choices)
         colors.append(prev)
     segments = [
-        ChallengeSegment(rgb=c, duration_ms=cfg.segment_ms + rng.randint(-cfg.jitter_ms, cfg.jitter_ms)) for c in colors
+        ChallengeSegment(
+            rgb=c, duration_ms=cfg.segment_ms + rng.randint(-cfg.jitter_ms, cfg.jitter_ms)
+        )
+        for c in colors
     ]
     neutral = ChallengeSegment(rgb=palette.neutral, duration_ms=cfg.neutral_ms)
     return Challenge(
@@ -121,7 +171,9 @@ def _build(palette: Palette, cfg: ChallengeConfig, rng: random.Random) -> Challe
     )
 
 
-def generate(cfg: ChallengeConfig | None = None, rng: random.Random | None = None, max_attempts: int = 1000) -> Challenge:
+def generate(
+    cfg: ChallengeConfig | None = None, rng: random.Random | None = None, max_attempts: int = 1000
+) -> Challenge:
     """Generate a valid challenge. ``rng`` is for tests only; production uses ``secrets.SystemRandom``."""
     cfg = cfg or ChallengeConfig()
     rng = rng or secrets.SystemRandom()
@@ -130,7 +182,9 @@ def generate(cfg: ChallengeConfig | None = None, rng: random.Random | None = Non
         raise ChallengeError(f"unknown palette {cfg.palette_id!r}")
     for _ in range(max_attempts):
         challenge = _build(palette, cfg, rng)
-        if not validate(challenge, cfg):
+        if challenge.total_ms <= cfg.total_cap_ms - cfg.render_reserve_ms and not validate(
+            challenge, cfg
+        ):
             return challenge
     raise ChallengeError(
         f"could not generate a valid challenge in {max_attempts} attempts for {cfg}; "

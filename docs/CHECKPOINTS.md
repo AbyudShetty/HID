@@ -1,44 +1,46 @@
 # Owner checkpoints and Git commands
 
-The owner runs all Git writes. The engineer never stages, commits, pushes, amends, resets, cleans or rewrites history. Stop after meaningful, tested milestones for review and any required manual verification. Do not collect several milestones into one giant change.
+The owner performs all Git writes. The engineer never stages, commits, pushes, amends, resets, cleans or rewrites history. Stop after each meaningful milestone for review, manual verification where needed, and a separate owner commit.
 
-## C0 — Review and architecture draft, ready for owner review
+## C1 — Measurement-path repair: ready for review and commit
 
-Read [repository review](REPOSITORY_REVIEW.md), [plan §26](../plan.md#26-campus-access-and-safe-offline-operation--v12-review-draft), [ADR dispositions and proposals](DECISIONS.md), and [human tasks](HUMAN_TASKS.md). The important choices are the local edge gateway, separate campus authorization, the proposed offline freshness bound, and two direct dependencies. Proposed architecture is not yet implemented or approved. No new feature code/tests/dependencies were changed during review.
+Read [C1 implementation/evidence/limitations](C1_MEASUREMENT.md), [approved ADRs](DECISIONS.md) and [metadata-only browser evidence](../experiments/C1_measurement/browser_checks.json). C0 was committed by the owner as `63668f9`; the working plan and original poster are now private under ignored `.local/`. Do not move or stage them.
 
-Evidence: 102 fast backend + 14 model tests; lint; 37 frontend unit tests; TS/Vite build; all eight model hashes; current-source Docker build/healthy probe; two real TS↔Docker hello/auth tests. The integration marker selects no tests: complete access-flow integration remains to build. E1/E2 remain unperformed. Full details/known defects are in the review.
+C1 acceptance: 136 fast backend tests, 14 model tests, one measurement-upload integration test, 47 frontend unit tests, two separate live TS↔Docker tests; lint, frontend build, Docker health/eight model hashes passed. The original timing regression is fixed. The first browser run retained a local proxy timeout (9/10 accepted); repeat and final timestamp runs each passed 10/10. An injected 1400 ms stall aborted without uploading a bundle. These checks use a simulated camera and establish no real liveness result.
 
 Manual review now:
 
-1. Confirm the architectural/risk choices in plan §26.12 and ADR-006–009. Approving a documentation checkpoint is distinct from approving offline grants or G0/G1.
-2. Supply both surprise photographs or their local paths, plus submission deadline and available real-rig/subject collection time.
-3. Optional smoke check after setting your own backend/kiosk tokens: `/ops` should connect and show provisional thresholds; `/kiosk` should honestly report it is unimplemented. No ALLOW or accuracy claim is expected. The review-created Docker backend was stopped after testing; start your own stack with `docker compose up --build -d`, then `cd kiosk` and `npm run dev`.
-4. Real color/camera trials wait until C1 fixes the actual-render timing defect. No need to repeat automatic baseline tests manually just to approve the review.
+1. Review the new illumination preparation and safe-release overhead. The spike's complete request-to-idle is about 2.5 s; capture-only timing is not an access-decision performance claim.
+2. Review v2 trace/schema and timestamp checks, plus preserved legacy provenance. Exact issued-challenge binding and single use still apply.
+3. No physical data collection is required for this software checkpoint. Real exposure/WB/illumination verification waits for owner C3's tested probes and consented rig/data.
+4. Supply the two surprise photographs: `docs/reference/` was still absent during C1. The local plan records this source gap. Also confirm submission deadline and available hardware/subjects when possible.
 
-There is no existing Git commit, so the first owner commit needs to capture the inherited implementation as well as the review. A docs-only initial commit would leave the described code absent from a fresh checkout. These commands explicitly include source/fixtures and only the model manifest; ignored raw data, weights, virtual environments and secrets remain excluded. Review the staged names yourself before committing.
+If manually using the updated spike, rebuild your own configured backend first (`docker compose up --build -d`), then start the kiosk. The pre-existing owner container was preserved during testing and may still contain the older bundle schema. No real participant recording is needed for this checkpoint.
+
+Run from the repository after reviewing the diff. The source/test fixture changes contain controlled synthetic data; the published browser JSON contains metadata only. Raw browser bundles/logs remain ignored in `data/`. No credentials, real participant data, weights or private plan should be staged.
 
 ```powershell
 Set-Location -LiteralPath 'C:\ABYUD\HACKATHONS\HID'
 git status --short --branch
-git add .env.example .gitignore HID_Hackathon_Challenge_Reveal.jpg Makefile README.md backend docker-compose.yml docs experiments infra kiosk models/manifest.json plan.md ruff.toml tasks.py tools
+git diff --check
+git add backend kiosk/src tools/cdp_spike_e2e.mjs docs experiments/C1_measurement README.md
 git diff --cached --stat
 git diff --cached --name-only
 # After reviewing the staged paths and content:
-git commit -m "Bootstrap HID capture and vision; document campus and offline architecture review"
+git commit -m "C1: repair challenge rendering and validate measurement timing"
 ```
 
-Do not add `.env`, private keys, `data/`, raw participant material or model weights. The reference image/NPZ test fixtures under `backend/tests/fixtures` are inherited public-source test artifacts with attribution, not new participant recordings. No push is requested here. If any other actor has made a first commit before you run this, inspect status/diff and choose the corresponding smaller staging set instead of assuming this is still an initial commit.
+Do not run `git add .` or force-add `.local/`, `data/`, `.env`, private keys or model weights. If other work has appeared since this checkpoint, inspect it and stage the exact C1 files only. No push is requested.
 
-## Subsequent stops
+## Approved next checkpoints (owner sequence)
 
-| Stop | Engineer delivers | Owner/manual action before dependent work |
+| Stop | Deliverable | Owner/manual action |
 |---|---|---|
-| C1 | Renderer/capture/ingress hardening and T1.6 feature extraction; focused/full test evidence; exact staging list | Review small code milestone and run commit; inspect safe real-display behavior before experiments |
-| C2 | Tested E1 browser/native probes and exact hardware commands | Set up rig and run real probes; record raw evidence and capture-path decision |
-| C3/C4/G1 | E2 LOSO analysis, real data results; AWS/network/model timing evidence; G1 report | Consent/collect data; sandbox credentials; approve GO/PARTIAL/FALLBACK/INCONCLUSIVE explicitly |
-| C5/C6 | Pure schedule/decision/outbox then integrated online campus flow | Test permitted/closed/factor-required schedule and policy update with labeled data; separate commits |
-| C7 | Safe offline state/queue/sync without grants | Cut network mid-attempt, restart offline, restore; verify no late grants and no duplicate events |
-| C8 | Restricted local verification and offline factor | Approve freshness risk; verify with real enrolled people/attacks and stale/tampered cache; enable only after evidence |
-| C9 | Calibrated system, locked results, AWS/local demo and rehearsals | Owner freezes/tags/commits; real demo rehearsal; judge acceptance |
+| C1 — current | Measurement generation/rendering, frame alignment, trace acceptance, ADR-005 evidence | Review and commit; no physical experiment approval inferred |
+| C2 | T1.6 Chroma series/features and synthetic quality/alignment tests | Review definitions/tests and commit; no liveness confidence fabricated |
+| C3 | E1 browser/native probes, E2 participant/device-aware analysis, AWS inventory and measurement tools | Set up rig, consent/collect real data, provide sandbox access; approve G1 only on evidence |
+| C4 | Campus authorization, signed versioned policy, schedule administrator/demo UI | Test windows, weekdays/weekends, holidays, step-up and policy updates; separate commit |
+| C5 | Lightweight independent local runtime, strict freshness/cache guards, SQLite outbox and sync | Cut central network/process, restart offline, test spoof/unknown/stale refusal, restore and verify duplicate/partial sync |
+| C6 | Full access-flow integration, benchmarks, calibration/locked evidence and judge-ready demo | Real hardware/attack verification and rehearsals; owner freeze/tag/commit actions |
 
-Each stop gets its own concrete commands and evidence when ready; the table does not approve future changes, cloud provisioning or gates. If an experiment or required check fails, report the failure and revise the milestone rather than committing a misleading completion claim.
+Architecture/dependency choices in ADR-006–009 are already approved; do not ask for the same approval again. Restricted offline ALLOW still requires every approved guard and verified data less than 900 seconds old. Actual E1/E2 results, empirical gates, and later cloud provisioning remain separate from permission to implement.

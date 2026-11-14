@@ -19,6 +19,7 @@ from ..pipeline.bundle_io import (
     unpack_bundle,
     write_bundle,
 )
+from ..pipeline.measurement import validate_measurement
 from ..schemas import CaptureConfig
 from ..sessions.manager import SessionError
 from .auth import require_operator
@@ -47,10 +48,18 @@ async def post_bundle(request: Request) -> dict:
     declared = request.headers.get("content-length")
     if declared and declared.isdigit() and int(declared) > MAX_BUNDLE_BYTES:
         raise HTTPException(status_code=413, detail="bundle too large")
-    blob = await request.body()
+    # Content-Length is optional/untrusted: bound bytes while reading, not after allocation.
+    blob = bytearray()
+    async for chunk in request.stream():
+        if len(blob) + len(chunk) > MAX_BUNDLE_BYTES:
+            raise HTTPException(status_code=413, detail="bundle too large")
+        blob.extend(chunk)
     try:
         entries = unpack_bundle(blob)
+        if {"result.json", "server_timing.json"} & entries.keys():
+            raise BundleError("client cannot supply server result or timing entries")
         bundle = build_bundle(entries)
+        validate_measurement(bundle, request.app.state.sessions.cfg)
     except BundleError as exc:
         raise HTTPException(status_code=400, detail=f"invalid bundle: {exc}") from exc
     if bundle.label is None:
