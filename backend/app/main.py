@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
-from .api import rest_collect, rest_ops, ws_kiosk
+from .api import rest_collect, rest_experiments, rest_ops, ws_kiosk
 from .challenge.sequence import ChallengeConfig
 from .config import Policy, Settings, load_policy
 from .model_registry import assert_no_tampering, verify_models
@@ -43,6 +43,7 @@ def create_app(settings: Settings | None = None, policy: Policy | None = None) -
     app.include_router(ws_kiosk.router)
     app.include_router(rest_ops.router)
     app.include_router(rest_collect.router)
+    app.include_router(rest_experiments.router)
 
     @app.get("/api/v1/health", response_model=HealthResponse)
     async def health() -> HealthResponse:

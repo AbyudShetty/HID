@@ -196,8 +196,8 @@ def write_bundle(bundle: Bundle, entries: dict[str, bytes], root: Path) -> Path:
     return target
 
 
-def read_bundle(path: Path) -> Bundle:
-    """Load a bundle directory written by :func:`write_bundle` (or by the online pipeline later)."""
+def read_entries(path: Path) -> dict[str, bytes]:
+    """Raw bundle entries from a bundle directory (the same mapping the upload path produces)."""
     if not path.is_dir():
         raise BundleError(f"not a bundle directory: {path}")
     entries: dict[str, bytes] = {}
@@ -206,7 +206,12 @@ def read_bundle(path: Path) -> Bundle:
             name = p.relative_to(path).as_posix()
             if valid_entry_name(name):
                 entries[name] = p.read_bytes()
-    return build_bundle(entries)
+    return entries
+
+
+def read_bundle(path: Path) -> Bundle:
+    """Load a bundle directory written by write_bundle (or by the online pipeline later)."""
+    return build_bundle(read_entries(path))
 
 
 @dataclass(frozen=True)

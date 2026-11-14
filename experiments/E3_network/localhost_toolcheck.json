@@ -1,0 +1,50 @@
+{
+  "name": "localhost_toolcheck",
+  "base": "http://127.0.0.1:8000",
+  "note": "HTTP proxy for uplink; localhost runs validate the tool only",
+  "first_request_ms": 8.5,
+  "rtt_ms": {
+    "n": 50,
+    "p50": 0.54,
+    "p95": 0.92,
+    "max": 2.62
+  },
+  "uplink_mbit_s": {
+    "n": 20,
+    "p10": 2487.7,
+    "p50": 2928.5
+  },
+  "frame_matrix": {
+    "192px_q0.8": {
+      "bytes_per_frame": 7111,
+      "mbit_s_at_30fps": 1.71,
+      "mbit_s_at_20fps": 1.14,
+      "mbit_s_at_15fps": 0.85
+    },
+    "192px_q0.9": {
+      "bytes_per_frame": 10144,
+      "mbit_s_at_30fps": 2.43,
+      "mbit_s_at_20fps": 1.62,
+      "mbit_s_at_15fps": 1.22
+    },
+    "256px_q0.8": {
+      "bytes_per_frame": 10246,
+      "mbit_s_at_30fps": 2.46,
+      "mbit_s_at_20fps": 1.64,
+      "mbit_s_at_15fps": 1.23
+    },
+    "256px_q0.9": {
+      "bytes_per_frame": 14787,
+      "mbit_s_at_30fps": 3.55,
+      "mbit_s_at_20fps": 2.37,
+      "mbit_s_at_15fps": 1.77
+    }
+  },
+  "check_default_config": {
+    "config": "256px q0.9 30fps",
+    "needs_mbit_s": 3.55,
+    "fraction_of_p10": 0.001,
+    "pass_uplink_le_50pct_of_p10": true,
+    "pass_rtt_p95_le_300ms": true
+  }
+}

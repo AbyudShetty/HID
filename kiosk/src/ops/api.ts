@@ -87,3 +87,7 @@ export interface PreviewResult {
 export async function postPreview(jpeg: Blob): Promise<PreviewResult> {
   return (await check(await fetch("/api/v1/collect/preview", { method: "POST", headers: { ...auth(), "Content-Type": "image/jpeg" }, body: jpeg }))) as PreviewResult;
 }
+
+export async function apiPostJson<T>(path: string, body: unknown): Promise<T> {
+  return (await check(await fetch(path, { method: "POST", headers: { ...auth(), "Content-Type": "application/json" }, body: JSON.stringify(body) }))) as T;
+}

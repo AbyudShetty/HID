@@ -62,3 +62,20 @@ Entry template (plan Appendix B). Every measurement is logged here with provenan
 - Conclusion: **refutes** the ≤ 20 ms per-crop budget on this machine/config. Serial analysis of 36 crops ≈ 1.1 s, so analysing after capture would not fit a 2 s decision together with ≥ 1.2 s capture; work must overlap capture (M3 streaming) and/or use a lighter detector (`det_500m`) or more threads. Not yet tried; E4 on the real target instance is still pending.
 - Decision proposed: none yet; revisit at G1 with E4 on EC2 and the det_500m variant.
 - Follow-up (same machine, single reference crop, n = 60, detector only at 320 px, regions excluded): `det_10g` 2 threads p50 27.2 / p95 28.6 ms; 4 threads p50 14.9 / p95 19.1 ms; `det_500m` 2 threads p50 3.0 / p95 3.6 ms; 4 threads p50 2.2 / p95 2.7 ms. So 4 threads brings `det_10g` inside the 20 ms budget on this laptop, and `det_500m` is ~9x faster but scored 0.72 vs 0.76 on this one image. Whether `det_500m` is accurate enough for region placement and identity alignment is **not tested** (needs LFW/kiosk data; decision G-06 stays open). Ad-hoc measurement, not saved as an artifact.
+
+## E1-1: camera control, laptop webcam self-run (2026-11-14) - INCONCLUSIVE
+- Full write-up: `experiments/E1_camera/report.md`. Rig deviates from the plan (no card, laptop display, uncontrolled ROI).
+- Solid: the camera is YUY2-only; 1280x720 delivers ~10 fps, 640x480 delivers 30.5-30.7 fps (interval std 3.4-3.6 ms); response delay ~55 ms; manual WB settable, exposure control not confirmed by read-back.
+- Not solid: 3 manual-mode runs gave 5 / 1 / 4 detected steps and droop from -4 % to +34 % depending on the run; one run met every criterion, two did not. Auto mode: 7.5 fps, no detectable step.
+- Conclusion: refutes the 1280x720@30 assumption for this camera; does not decide G-01. Needs the card rig (HUMAN_TASKS H-03/H-04).
+
+## E3-0: network probe tool check (2026-11-14) - tool validation only
+- `tools/net_probe.py` against a local backend (`experiments/E3_network/localhost_toolcheck.json`): RTT p50 0.54 ms, uplink ~2.5 Gbit/s. **These say nothing about a real network.**
+- Real measurement: JPEG frame sizes from the reference crop: 256 px q0.9 = 14,787 B (3.55 Mbit/s at 30 fps), 256 px q0.8 = 10,246 B (2.46 Mbit/s), 192 px q0.8 = 7,111 B (1.71 Mbit/s). Content-dependent (one reference photo).
+- E3 proper (RTT/uplink to a candidate AWS region) is blocked on the sandbox access code (H-01).
+
+## E4-2: model latency matrix on this laptop (2026-11-14)
+- `tools/bench_models.py --runs 60 --warmup 10`; full table in `experiments/E4_models/report.md`. i7-13620H, 16 threads, ORT CPU, one reference image, compute only.
+- p95 highlights (1 / 2 / 4 threads): det_10g@640 212 / 216 / 120 ms; det_10g@256 90 / 41 / 20 ms; det_500m@640 52 / 24 / 14 ms; det_500m@256 12 / 3 / 3 ms; ArcFace R50 404 / 197 / 152 ms (p50 at 4 threads 104 ms); ArcFace MBF 20 / 13 / 7 ms; MiniFASNet V2 and V1SE 2-6 ms.
+- Against plan budgets: per-crop (det@256 + regions, <= 20 ms): det_10g meets it only at 4 threads before regions are added; det_500m meets it at any thread count. Keyframe work (det@640 + R50 + 2x MiniFASNet, <= 300 ms): ~277 ms p95 at 4 threads (barely), ~419 ms at 2 threads (fails); with det_500m + MBF it is ~40 ms.
+- Conclusion: the identity model (R50) is the latency driver, not liveness. Accuracy of the lighter det_500m / MBF is NOT measured (LFW check pending, G-06 open). P1 models (YOLOX-tiny, DINOv2) not measured. EC2 instance types not measured (H-01).

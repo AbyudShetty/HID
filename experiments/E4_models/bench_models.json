@@ -1,0 +1,226 @@
+{
+  "machine": {
+    "cpu_threads": 16,
+    "platform": "Windows-10-10.0.26300-SP0",
+    "python": "3.10.0"
+  },
+  "note": "compute only; one machine; one reference image; P1 models not measured",
+  "results": [
+    {
+      "model": "det_10g",
+      "input": 640,
+      "threads": 1,
+      "p50_ms": 202.37,
+      "p95_ms": 212.01,
+      "max_ms": 445.35,
+      "n": 60
+    },
+    {
+      "model": "det_10g",
+      "input": 256,
+      "threads": 1,
+      "p50_ms": 50.83,
+      "p95_ms": 89.75,
+      "max_ms": 109.29,
+      "n": 60
+    },
+    {
+      "model": "det_500m",
+      "input": 640,
+      "threads": 1,
+      "p50_ms": 31.59,
+      "p95_ms": 52.1,
+      "max_ms": 59.41,
+      "n": 60
+    },
+    {
+      "model": "det_500m",
+      "input": 256,
+      "threads": 1,
+      "p50_ms": 3.92,
+      "p95_ms": 12.01,
+      "max_ms": 12.99,
+      "n": 60
+    },
+    {
+      "model": "arcface_w600k_r50",
+      "input": 112,
+      "threads": 1,
+      "p50_ms": 317.06,
+      "p95_ms": 404.3,
+      "max_ms": 487.27,
+      "n": 60
+    },
+    {
+      "model": "arcface_w600k_mbf",
+      "input": 112,
+      "threads": 1,
+      "p50_ms": 15.63,
+      "p95_ms": 20.17,
+      "max_ms": 26.43,
+      "n": 60
+    },
+    {
+      "model": "minifasnet_v2",
+      "input": 80,
+      "threads": 1,
+      "p50_ms": 2.37,
+      "p95_ms": 3.86,
+      "max_ms": 4.14,
+      "n": 60
+    },
+    {
+      "model": "minifasnet_v1se",
+      "input": 80,
+      "threads": 1,
+      "p50_ms": 2.64,
+      "p95_ms": 5.69,
+      "max_ms": 7.73,
+      "n": 60
+    },
+    {
+      "model": "det_10g",
+      "input": 640,
+      "threads": 2,
+      "p50_ms": 162.6,
+      "p95_ms": 216.28,
+      "max_ms": 267.83,
+      "n": 60
+    },
+    {
+      "model": "det_10g",
+      "input": 256,
+      "threads": 2,
+      "p50_ms": 25.4,
+      "p95_ms": 41.3,
+      "max_ms": 44.49,
+      "n": 60
+    },
+    {
+      "model": "det_500m",
+      "input": 640,
+      "threads": 2,
+      "p50_ms": 15.3,
+      "p95_ms": 23.75,
+      "max_ms": 29.49,
+      "n": 60
+    },
+    {
+      "model": "det_500m",
+      "input": 256,
+      "threads": 2,
+      "p50_ms": 2.32,
+      "p95_ms": 3.24,
+      "max_ms": 3.66,
+      "n": 60
+    },
+    {
+      "model": "arcface_w600k_r50",
+      "input": 112,
+      "threads": 2,
+      "p50_ms": 161.88,
+      "p95_ms": 197.01,
+      "max_ms": 219.5,
+      "n": 60
+    },
+    {
+      "model": "arcface_w600k_mbf",
+      "input": 112,
+      "threads": 2,
+      "p50_ms": 8.4,
+      "p95_ms": 13.07,
+      "max_ms": 16.29,
+      "n": 60
+    },
+    {
+      "model": "minifasnet_v2",
+      "input": 80,
+      "threads": 2,
+      "p50_ms": 1.82,
+      "p95_ms": 2.37,
+      "max_ms": 3.35,
+      "n": 60
+    },
+    {
+      "model": "minifasnet_v1se",
+      "input": 80,
+      "threads": 2,
+      "p50_ms": 1.87,
+      "p95_ms": 2.89,
+      "max_ms": 4.02,
+      "n": 60
+    },
+    {
+      "model": "det_10g",
+      "input": 640,
+      "threads": 4,
+      "p50_ms": 102.51,
+      "p95_ms": 120.29,
+      "max_ms": 126.39,
+      "n": 60
+    },
+    {
+      "model": "det_10g",
+      "input": 256,
+      "threads": 4,
+      "p50_ms": 15.86,
+      "p95_ms": 19.84,
+      "max_ms": 22.15,
+      "n": 60
+    },
+    {
+      "model": "det_500m",
+      "input": 640,
+      "threads": 4,
+      "p50_ms": 10.48,
+      "p95_ms": 14.2,
+      "max_ms": 15.89,
+      "n": 60
+    },
+    {
+      "model": "det_500m",
+      "input": 256,
+      "threads": 4,
+      "p50_ms": 2.36,
+      "p95_ms": 3.33,
+      "max_ms": 3.57,
+      "n": 60
+    },
+    {
+      "model": "arcface_w600k_r50",
+      "input": 112,
+      "threads": 4,
+      "p50_ms": 103.93,
+      "p95_ms": 151.68,
+      "max_ms": 202.7,
+      "n": 60
+    },
+    {
+      "model": "arcface_w600k_mbf",
+      "input": 112,
+      "threads": 4,
+      "p50_ms": 5.76,
+      "p95_ms": 7.02,
+      "max_ms": 7.49,
+      "n": 60
+    },
+    {
+      "model": "minifasnet_v2",
+      "input": 80,
+      "threads": 4,
+      "p50_ms": 1.63,
+      "p95_ms": 1.8,
+      "max_ms": 1.95,
+      "n": 60
+    },
+    {
+      "model": "minifasnet_v1se",
+      "input": 80,
+      "threads": 4,
+      "p50_ms": 1.69,
+      "p95_ms": 2.41,
+      "max_ms": 2.49,
+      "n": 60
+    }
+  ]
+}

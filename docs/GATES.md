@@ -49,3 +49,16 @@ Template (plan Appendix C). A gate needs **human approval** before dependent wor
 - Browser evidence: first run 9/10 accepted with one local Vite upstream timeout; repeat 10/10; final timestamp run 10/10; deliberate 1400 ms stall aborted with no upload. Metadata and source hashes: `experiments/C1_measurement/browser_checks.json`. Evidence classification: **simulated-camera software verification only**.
 - Limitation: current request-to-idle cycle is about 2.5 s including preparation/release; capture-only timing is not the official access latency. DOM timing does not prove optical/camera response or locked exposure/WB. E1/E2 and G1 remain pending real evidence.
 - Owner decisions already approved and recorded in ADR-001–009; no repeated permission requested for them. C1 is ready for owner review/commit, then C2/T1.6. See `C1_MEASUREMENT.md` and `CHECKPOINTS.md`. No Git writes performed.
+
+## Gate G1 - Prove the riskiest assumptions (2026-11-14) - NOT READY FOR A DECISION
+- Criteria (plan 9.6): E1 camera control passes on the rig; E2 chroma feasibility GO/PARTIAL/NO-GO with data; E3 network and E4 model latency measured for at least one allowed AWS region/instance; outcome PRIMARY / PRIMARY-PARTIAL / FALLBACK-F2 approved by a human.
+- Evidence so far:
+  - Tooling complete and tested: challenge generator, bundle I/O, capture + spike page, SCRFD/regions, chroma features, live preview + measure-only instrument, E1 metrics (native + browser probe), E2 analysis (synthetic-tested), E3 probe, E4 benchmark, AWS inventory script.
+  - E1: INCONCLUSIVE (`experiments/E1_camera/report.md`). Frame rate/jitter/response delay measured; droop and exposure lock not established; rig not as specified.
+  - E2: **not run.** No labelled data from real people and attacks exists. `analyze.py` reports INSUFFICIENT_DATA by design with fewer than 3 subjects. Thresholds unchanged: AUC >= 0.95 screens, >= 0.90 prints, unseen people.
+  - E3: tool validated locally only; no AWS measurement (no sandbox access).
+  - E4: laptop matrix done; no EC2 data (docs/EXPERIMENTS.md E4-2).
+- Result per criterion: E1 inconclusive; E2 not run; E3 not run on a real network; E4 partial. **No outcome (PRIMARY / PARTIAL / FALLBACK-F2) can be proposed honestly yet.**
+- Findings that already change the plan: the camera used delivers 10 fps at 1280x720 (use 640x480 or a MJPG camera); ArcFace R50 dominates per-session compute (consider MBF, accuracy to be checked); per-crop SCRFD detection needs 4 threads or det_500m to meet the 20 ms budget; analysing after capture (/measure) cannot meet a 2 s decision, so analysis must stream during capture (M3).
+- Fallback status: Fallback F2 (passive-first) is not built and was not needed to be built yet; it needs MiniFASNet and device-detector serving wrappers (M2).
+- Approval: **pending; cannot be approved on current evidence.** To unblock: card-rig E1 runs, E2 collection (about 150 sessions, 3+ subjects), AWS access for E3/E4 (docs/HUMAN_TASKS.md H-01..H-05).

@@ -3,6 +3,7 @@ import { KioskPage } from "./kiosk/KioskPage";
 import { NotImplemented } from "./components/NotImplemented";
 import { OpsLayout } from "./ops/OpsLayout";
 import { OpsStatus } from "./ops/OpsStatus";
+import { CameraProbe } from "./ops/CameraProbe";
 import { SpikePage } from "./ops/SpikePage";
 
 // Routes follow plan §14. Anything not built in the current milestone renders a plain notice, never mock data.
@@ -14,7 +15,7 @@ export function App() {
       <Route path="/ops" element={<OpsLayout />}>
         <Route index element={<OpsStatus />} />
         <Route path="spike" element={<SpikePage />} />
-        <Route path="camera-probe" element={<NotImplemented what="Camera probe (E1)" milestone="M1 (T1.4)" />} />
+        <Route path="camera-probe" element={<CameraProbe />} />
         <Route path="attempt/:id" element={<NotImplemented what="Evidence view" milestone="M7 (T7.1)" />} />
         <Route path="compare" element={<NotImplemented what="Compare view" milestone="M7 (T7.1)" />} />
         <Route path="review" element={<NotImplemented what="Manual review queue" milestone="M5 (T5.6)" />} />

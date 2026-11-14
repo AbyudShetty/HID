@@ -33,9 +33,9 @@ M0 Bootstrap
 [ ] G0 approved   (report in docs/GATES.md, awaiting human approval)
 M1 Risk spikes
 [x] T1.1 Challenge generator         [x] T1.2 Capture modules + spike page   [x] T1.3 Bundle I/O
-[ ] T1.4 E1 camera                   [ ] T1.5 SCRFD + regions                [ ] T1.6 Chroma features
-[ ] T1.7 E2 chroma feasibility [HUMAN data]   [ ] T1.8 AWS inventory + E3   [ ] T1.9 E4 models
-[ ] T1.10 G1 report   [ ] T1.11 Pitch v0 + organizer questions sent
+[~] T1.4 E1 camera (tools done; INCONCLUSIVE, needs card rig)                   [x] T1.5 SCRFD + regions                [x] T1.6 Chroma features
+[~] T1.7 E2 (analysis built + tested; NOT RUN, needs data)   [~] T1.8 (inventory.sh + net_probe built; needs AWS access)   [~] T1.9 E4 (laptop matrix done; EC2 pending)
+[~] T1.10 G1 report (written: NOT READY for a decision)   [~] T1.11 Pitch v0 written; organizer questions NOT yet sent
 [ ] G1 approved — outcome: ________
 M2 Core offline
 [ ] T2.1 Quality  [ ] T2.2 MiniFASNet  [ ] T2.3 ArcFace + LFW  [ ] T2.4 Chroma signal
@@ -114,3 +114,6 @@ M10 Demo
 - Browser evidence: initial simulated-camera run **9/10 accepted**, one Vite→isolated-Docker `ETIMEDOUT` on challenge request (no backend request). Repeat **10/10**; final application-completion-timestamp run **10/10**. A separate 1400 ms main-thread stall safely aborted with no upload. All 29 accepted traces revalidated server-side, each with two neutral keyframes. Capture 1208.4–1236.0 ms; request-to-idle 2528.7–2586.3 ms across iterations. **No physical liveness/identity/2 s access evidence**. First failure retained in the report.
 - Published metadata-only evidence: `experiments/C1_measurement/browser_checks.json`; full explanation/limitations: `docs/C1_MEASUREMENT.md`. No real biometric dataset, raw camera material, weights or credentials included. The pre-existing owner Docker stack was untouched; review used an isolated container/port and temporary tokens.
 - Stop at C1. C2/T1.6 and E1/E2 software/physical work are not marked done. Human follow-up: owner review/commit; provide surprise photographs and timing/rig/consenting-subject availability. No Git writes performed.
+
+### 2026-11-14 - M1 tooling completed (agent)
+- All M1 tools built and tested; G1 is not decidable without human-collected evidence (see docs/GATES.md). Legend: [x] done, [~] built but evidence missing.
